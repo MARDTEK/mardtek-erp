@@ -176,7 +176,7 @@ class LaborIncident(Base):
     description: Mapped[str] = mapped_column(Text, nullable=False)
     resolution: Mapped[Optional[str]] = mapped_column(Text)
     status: Mapped[IncidentStatus] = mapped_column(
-        Enum(IncidentStatus), default=IncidentStatus.OPEN
+        Enum(IncidentStatus, name="hr_incident_status"), default=IncidentStatus.OPEN
     )
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), default=lambda: datetime.now(timezone.utc)
@@ -197,7 +197,7 @@ class StaffRegister(Base):
     department: Mapped[str] = mapped_column(String(255), nullable=False)
     position: Mapped[str] = mapped_column(String(255), nullable=False)
     hire_date: Mapped[date] = mapped_column(Date, nullable=False)
-    contract_type: Mapped[ContractType] = mapped_column(Enum(ContractType), nullable=False)
+    contract_type: Mapped[ContractType] = mapped_column(Enum(ContractType, name="hr_contract_type"), nullable=False)
     status: Mapped[StaffStatus] = mapped_column(Enum(StaffStatus), default=StaffStatus.ACTIVE)
 
     def __repr__(self) -> str:

@@ -121,7 +121,7 @@ class SupplierEvaluation(Base):
     total_score: Mapped[Optional[float]] = mapped_column(Float)
     period: Mapped[str] = mapped_column(String(20), nullable=False)  # e.g. "2026-Q1"
     status: Mapped[EvaluationStatus] = mapped_column(
-        Enum(EvaluationStatus), default=EvaluationStatus.DRAFT
+        Enum(EvaluationStatus, name="proc_evaluation_status"), default=EvaluationStatus.DRAFT
     )
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), default=lambda: datetime.now(timezone.utc)

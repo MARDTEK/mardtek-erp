@@ -120,7 +120,7 @@ class ProjectExecutionPlan(Base):
     phases: Mapped[dict] = mapped_column(JSON, default=list)  # List of {name, start, end, status}
     milestones: Mapped[dict] = mapped_column(JSON, default=list)  # List of {name, target_date, completed_at}
     risks: Mapped[dict] = mapped_column(JSON, default=list)  # List of {description, impact, probability, mitigation}
-    status: Mapped[PlanStatus] = mapped_column(Enum(PlanStatus), default=PlanStatus.DRAFT)
+    status: Mapped[PlanStatus] = mapped_column(Enum(PlanStatus, name="pmo_plan_status"), default=PlanStatus.DRAFT)
 
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), default=lambda: datetime.now(timezone.utc)
