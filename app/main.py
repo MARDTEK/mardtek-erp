@@ -9,7 +9,10 @@ from fastapi.middleware.cors import CORSMiddleware
 from app.core.config import settings
 from app.core.database import Base, engine
 from app.modules.commercial_sales.router import router as commercial_router
+from app.modules.pmo_projects.router import router as pmo_projects_router
+from app.modules.strategic_planning.router import router as strategic_router
 from app.modules.quality_management.router import router as quality_router
+from app.modules.tech_development.router import router as tech_development_router
 
 
 @asynccontextmanager
@@ -40,3 +43,6 @@ async def health():
 
 app.include_router(quality_router, prefix="/api/v1/quality", tags=["Quality Management — P2"])
 app.include_router(commercial_router, prefix="/api/v1/commercial", tags=["Commercial Sales — P3"])
+app.include_router(strategic_router, prefix="/api/v1/strategic", tags=["Strategic Management — P1"])
+app.include_router(tech_development_router, prefix="/api/v1/development", tags=["Design & Development — P4"])
+app.include_router(pmo_projects_router, prefix="/api/v1/projects", tags=["Project Implementation & Execution — P5"])
