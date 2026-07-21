@@ -1,3 +1,5 @@
+"""FastAPI application — MARDTEK ERP."""
+
 from __future__ import annotations
 
 from contextlib import asynccontextmanager
@@ -5,9 +7,13 @@ from typing import AsyncGenerator
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from sqlalchemy import select
 
+from app.auth.models import User
+from app.auth.router import router as auth_router
+from app.auth.service import hash_password
 from app.core.config import settings
-from app.core.database import Base, dispose_engine, get_engine
+from app.core.database import Base, async_session_factory, dispose_engine, get_engine
 from app.modules.commercial_sales.router import router as commercial_router
 from app.modules.pmo_projects.router import router as pmo_projects_router
 from app.modules.training_services.router import router as training_router
@@ -21,12 +27,32 @@ from app.modules.infrastructure_it.router import router as infrastructure_router
 from app.modules.human_resources.router import router as human_resources_router
 
 
+async def seed_admin() -> None:
+    """Create default admin user if it doesn't exist."""
+    factory = async_session_factory()
+    async with factory() as session:
+        result = await session.execute(select(User).where(User.username == "admin"))
+        if result.scalar_one_or_none() is None:
+            admin = User(
+                username="admin",
+                email="admin@mardtek.com",
+                hashed_password=hash_password("admin123"),
+                role="admin",
+            )
+            session.add(admin)
+            await session.commit()
+            print("✅ Seeded admin user (admin / admin123)")
+        else:
+            print("ℹ️  Admin user already exists, skipping seed")
+
+
 @asynccontextmanager
 async def lifespan(_app: FastAPI) -> AsyncGenerator[None, None]:
     # Create tables on startup for development.
     # Production uses Alembic migrations — this is a safety net only.
     async with get_engine().begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
+    await seed_admin()
     yield
     await dispose_engine()
 
@@ -47,6 +73,7 @@ async def health():
     return {"status": "ok", "app": settings.APP_NAME, "version": "0.1.0"}
 
 
+app.include_router(auth_router)
 app.include_router(quality_router, prefix="/api/v1/quality", tags=["Quality Management — P2"])
 app.include_router(commercial_router, prefix="/api/v1/commercial", tags=["Commercial Sales — P3"])
 app.include_router(strategic_router, prefix="/api/v1/strategic", tags=["Strategic Management — P1"])

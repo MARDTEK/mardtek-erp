@@ -17,6 +17,7 @@ from app.core.config import settings
 # ── Lazy engine — created on first async use, NOT at import time ──────────
 
 _engine: AsyncEngine | None = None
+_factory: async_sessionmaker[AsyncSession] | None = None
 
 
 def get_engine() -> AsyncEngine:
@@ -29,12 +30,23 @@ def get_engine() -> AsyncEngine:
     return _engine
 
 
+def async_session_factory() -> async_sessionmaker[AsyncSession]:
+    """Return a session factory bound to the lazy engine."""
+    global _factory
+    if _factory is None:
+        _factory = async_sessionmaker(
+            get_engine(), class_=AsyncSession, expire_on_commit=False
+        )
+    return _factory
+
+
 async def dispose_engine() -> None:
     """Dispose the engine pool (call during app shutdown)."""
-    global _engine
+    global _engine, _factory
     if _engine is not None:
         await _engine.dispose()
         _engine = None
+        _factory = None
 
 
 # ── Declarative base ─────────────────────────────────────────────────────
@@ -50,10 +62,7 @@ class Base(DeclarativeBase):
 async def get_db() -> AsyncGenerator[AsyncSession, None]:
     """FastAPI dependency — yields a session, commits on success,
     rolls back on error, and always closes."""
-    engine = get_engine()
-    factory = async_sessionmaker(
-        engine, class_=AsyncSession, expire_on_commit=False
-    )
+    factory = async_session_factory()
     async with factory() as session:
         try:
             yield session
