@@ -12,6 +12,7 @@ from app.modules.quality_management.domain.logic import (
     close_nc,
     complete_audit,
     get_expired_documents,
+    implement_improvement,
     verify_action_effectiveness,
 )
 from app.modules.quality_management.domain.models import (
@@ -98,6 +99,16 @@ async def update_document(document_id: int, payload: DocumentUpdate, db: AsyncSe
     return doc
 
 
+@router.delete("/documents/{document_id}", status_code=status.HTTP_204_NO_CONTENT)
+async def delete_document(document_id: int, db: AsyncSession = Depends(get_db)):
+    result = await db.execute(select(Document).where(Document.id == document_id))
+    doc = result.scalar_one_or_none()
+    if not doc:
+        raise HTTPException(status_code=404, detail="Document not found")
+    await db.delete(doc)
+    await db.flush()
+
+
 @router.post("/documents/{document_id}/approve", response_model=DocumentResponse)
 async def approve_document_endpoint(
     document_id: int,
@@ -165,6 +176,16 @@ async def close_non_conformity(nc_id: int, db: AsyncSession = Depends(get_db)):
             detail="Cannot close: pending corrective actions or NC not found",
         )
     return nc
+
+
+@router.delete("/non-conformities/{nc_id}", status_code=status.HTTP_204_NO_CONTENT)
+async def delete_non_conformity(nc_id: int, db: AsyncSession = Depends(get_db)):
+    result = await db.execute(select(NonConformity).where(NonConformity.id == nc_id))
+    nc = result.scalar_one_or_none()
+    if not nc:
+        raise HTTPException(status_code=404, detail="Non-conformity not found")
+    await db.delete(nc)
+    await db.flush()
 
 
 # ─── Corrective Actions ──────────────────────────────────────────────────
@@ -337,6 +358,16 @@ async def get_process_owner(process_code: str, db: AsyncSession = Depends(get_db
     return owner
 
 
+@router.delete("/process-owners/{owner_id}", status_code=status.HTTP_204_NO_CONTENT)
+async def delete_process_owner(owner_id: int, db: AsyncSession = Depends(get_db)):
+    result = await db.execute(select(ProcessOwner).where(ProcessOwner.id == owner_id))
+    owner = result.scalar_one_or_none()
+    if not owner:
+        raise HTTPException(status_code=404, detail="Process owner not found")
+    await db.delete(owner)
+    await db.flush()
+
+
 # ─── Continuous Improvement ──────────────────────────────────────────────
 
 @router.get("/improvements", response_model=List[ImprovementResponse])
@@ -365,6 +396,17 @@ async def get_improvement(improvement_id: int, db: AsyncSession = Depends(get_db
         select(ContinuousImprovement).where(ContinuousImprovement.id == improvement_id)
     )
     imp = result.scalar_one_or_none()
+    if not imp:
+        raise HTTPException(status_code=404, detail="Improvement not found")
+    return imp
+
+
+@router.post("/improvements/{improvement_id}/implement", response_model=ImprovementResponse)
+async def implement_improvement_endpoint(
+    improvement_id: int,
+    db: AsyncSession = Depends(get_db),
+):
+    imp = await implement_improvement(db, improvement_id)
     if not imp:
         raise HTTPException(status_code=404, detail="Improvement not found")
     return imp

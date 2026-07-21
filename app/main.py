@@ -7,7 +7,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.core.config import settings
-from app.core.database import Base, engine
+from app.core.database import Base, dispose_engine, get_engine
 from app.modules.commercial_sales.router import router as commercial_router
 from app.modules.pmo_projects.router import router as pmo_projects_router
 from app.modules.training_services.router import router as training_router
@@ -25,10 +25,10 @@ from app.modules.human_resources.router import router as human_resources_router
 async def lifespan(_app: FastAPI) -> AsyncGenerator[None, None]:
     # Create tables on startup for development.
     # Production uses Alembic migrations — this is a safety net only.
-    async with engine.begin() as conn:
+    async with get_engine().begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
     yield
-    await engine.dispose()
+    await dispose_engine()
 
 
 app = FastAPI(title=settings.APP_NAME, version="0.1.0", lifespan=lifespan)

@@ -44,10 +44,11 @@ class DocumentResponse(BaseModel):
 # ─── Non-Conformity ──────────────────────────────────────────────────────
 
 class NCCreate(BaseModel):
+    code: str = Field(..., pattern=r"^NC-\d{4}-\d{3,}$")
     source: str
     source_ref: Optional[str] = None
     description: str
-    severity: str  # minor, major, critical
+    severity: str = Field(..., pattern=r"^(minor|major|critical)$")
     reported_by: str
 
 
@@ -74,6 +75,7 @@ class NCUpdateRootCause(BaseModel):
 # ─── Corrective Action ───────────────────────────────────────────────────
 
 class CorrectiveActionCreate(BaseModel):
+    code: str = Field(..., pattern=r"^CA-\d{4}-\d{3,}$")
     nc_id: int
     description: str
     responsible: str

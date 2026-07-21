@@ -11,6 +11,7 @@ class Settings(BaseSettings):
 
     DATABASE_URL: str = "postgresql+asyncpg://postgres:postgres@localhost:5432/mardtek_erp"
     DATABASE_SYNC_URL: str = "postgresql://postgres:postgres@localhost:5432/mardtek_erp"
+    TEST_DATABASE_URL: str = "postgresql+asyncpg://mard:mardtek_erp_2026@localhost:5433/mardtek_erp_test"
 
     JWT_SECRET: str = "change-me-in-production"
     JWT_ALGORITHM: str = "HS256"

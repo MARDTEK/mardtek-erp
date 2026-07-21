@@ -11,6 +11,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.modules.quality_management.domain.models import (
     ActionStatus,
     AuditStatus,
+    ContinuousImprovement,
     CorrectiveAction,
     Document,
     DocumentStatus,
@@ -111,3 +112,21 @@ async def complete_audit(
     audit.report_url = report_url
     await db.flush()
     return audit
+
+
+# ─── Improvement Logic ────────────────────────────────────────────────────
+
+async def implement_improvement(
+    db: AsyncSession, improvement_id: int
+) -> Optional[ContinuousImprovement]:
+    result = await db.execute(
+        select(ContinuousImprovement).where(ContinuousImprovement.id == improvement_id)
+    )
+    imp = result.scalar_one_or_none()
+    if imp is None:
+        return None
+    from datetime import datetime, timezone
+    imp.status = ImprovementStatus.IMPLEMENTED
+    imp.implemented_at = datetime.now(timezone.utc)
+    await db.flush()
+    return imp
