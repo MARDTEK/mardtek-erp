@@ -8,6 +8,7 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.auth.dependencies import RoleChecker, get_current_user
 from app.core.database import get_db
 from app.core.event_bus import Event, event_bus
 from app.modules.tech_development.domain.logic import (
@@ -52,7 +53,7 @@ from app.modules.tech_development.schemas.dto import (
     UATSignOffUpdate,
 )
 
-router = APIRouter()
+router = APIRouter(dependencies=[Depends(get_current_user)])
 
 
 # ─── ProductRoadmap (PLN-P4-001) ──────────────────────────────────────────
@@ -105,7 +106,7 @@ async def update_roadmap(roadmap_id: int, payload: ProductRoadmapUpdate, db: Asy
     return roadmap
 
 
-@router.delete("/roadmaps/{roadmap_id}", status_code=status.HTTP_204_NO_CONTENT)
+@router.delete("/roadmaps/{roadmap_id}", status_code=status.HTTP_204_NO_CONTENT, dependencies=[Depends(RoleChecker("admin", "manager"))])
 async def delete_roadmap(roadmap_id: int, db: AsyncSession = Depends(get_db)):
     result = await db.execute(select(ProductRoadmap).where(ProductRoadmap.id == roadmap_id))
     roadmap = result.scalar_one_or_none()
@@ -163,7 +164,7 @@ async def update_release(release_id: int, payload: ReleasePlanUpdate, db: AsyncS
     return release
 
 
-@router.delete("/releases/{release_id}", status_code=status.HTTP_204_NO_CONTENT)
+@router.delete("/releases/{release_id}", status_code=status.HTTP_204_NO_CONTENT, dependencies=[Depends(RoleChecker("admin", "manager"))])
 async def delete_release(release_id: int, db: AsyncSession = Depends(get_db)):
     result = await db.execute(select(ReleasePlan).where(ReleasePlan.id == release_id))
     release = result.scalar_one_or_none()
@@ -227,7 +228,7 @@ async def update_specification(
     return spec
 
 
-@router.delete("/specifications/{spec_id}", status_code=status.HTTP_204_NO_CONTENT)
+@router.delete("/specifications/{spec_id}", status_code=status.HTTP_204_NO_CONTENT, dependencies=[Depends(RoleChecker("admin", "manager"))])
 async def delete_specification(spec_id: int, db: AsyncSession = Depends(get_db)):
     result = await db.execute(select(TechnicalSpecification).where(TechnicalSpecification.id == spec_id))
     spec = result.scalar_one_or_none()
@@ -285,7 +286,7 @@ async def update_risk_matrix(
     return matrix
 
 
-@router.delete("/risk-matrices/{matrix_id}", status_code=status.HTTP_204_NO_CONTENT)
+@router.delete("/risk-matrices/{matrix_id}", status_code=status.HTTP_204_NO_CONTENT, dependencies=[Depends(RoleChecker("admin", "manager"))])
 async def delete_risk_matrix(matrix_id: int, db: AsyncSession = Depends(get_db)):
     result = await db.execute(select(RiskMatrix).where(RiskMatrix.id == matrix_id))
     matrix = result.scalar_one_or_none()
@@ -367,7 +368,7 @@ async def update_qa_report(
     return report
 
 
-@router.delete("/qa-reports/{report_id}", status_code=status.HTTP_204_NO_CONTENT)
+@router.delete("/qa-reports/{report_id}", status_code=status.HTTP_204_NO_CONTENT, dependencies=[Depends(RoleChecker("admin", "manager"))])
 async def delete_qa_report(report_id: int, db: AsyncSession = Depends(get_db)):
     result = await db.execute(select(QATestReport).where(QATestReport.id == report_id))
     report = result.scalar_one_or_none()
@@ -492,7 +493,7 @@ async def update_uat_signoff(
     return signoff
 
 
-@router.delete("/uat-signoffs/{signoff_id}", status_code=status.HTTP_204_NO_CONTENT)
+@router.delete("/uat-signoffs/{signoff_id}", status_code=status.HTTP_204_NO_CONTENT, dependencies=[Depends(RoleChecker("admin", "manager"))])
 async def delete_uat_signoff(signoff_id: int, db: AsyncSession = Depends(get_db)):
     result = await db.execute(select(UATSignOff).where(UATSignOff.id == signoff_id))
     signoff = result.scalar_one_or_none()
@@ -553,7 +554,7 @@ async def update_sunset(
     return sunset
 
 
-@router.delete("/sunsets/{sunset_id}", status_code=status.HTTP_204_NO_CONTENT)
+@router.delete("/sunsets/{sunset_id}", status_code=status.HTTP_204_NO_CONTENT, dependencies=[Depends(RoleChecker("admin", "manager"))])
 async def delete_sunset(sunset_id: int, db: AsyncSession = Depends(get_db)):
     result = await db.execute(select(SolutionSunset).where(SolutionSunset.id == sunset_id))
     sunset = result.scalar_one_or_none()

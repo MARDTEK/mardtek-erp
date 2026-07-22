@@ -7,6 +7,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.auth.dependencies import RoleChecker, get_current_user
 from app.core.database import get_db
 from app.core.event_bus import Event, event_bus
 from app.modules.procurement.domain.logic import (
@@ -43,7 +44,7 @@ from app.modules.procurement.schemas.dto import (
     SupplierRegistrationUpdate,
 )
 
-router = APIRouter()
+router = APIRouter(dependencies=[Depends(get_current_user)])
 
 
 # ─── Purchase Request (FO-P9-001) ──────────────────────────────────────────

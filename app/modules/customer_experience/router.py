@@ -6,6 +6,7 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.auth.dependencies import RoleChecker, get_current_user
 from app.core.database import get_db
 from app.core.event_bus import Event, event_bus
 from app.modules.customer_experience.domain.logic import (
@@ -47,7 +48,7 @@ from app.modules.customer_experience.schemas.dto import (
     SatisfactionReportResponse,
 )
 
-router = APIRouter()
+router = APIRouter(dependencies=[Depends(get_current_user)])
 
 NPS_TARGET: int = 60  # SGC minimum threshold defined in P10
 

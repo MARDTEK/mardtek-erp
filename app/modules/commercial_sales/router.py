@@ -7,7 +7,9 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
+from app.auth.dependencies import RoleChecker, get_current_user
 from app.core.database import get_db
+from app.core.event_bus import Event, event_bus
 from app.modules.commercial_sales.domain.logic import (
     accept_proposal,
     activate_subscription,
@@ -51,7 +53,7 @@ from app.modules.commercial_sales.schemas.dto import (
     SubscriptionResponse,
 )
 
-router = APIRouter()
+router = APIRouter(dependencies=[Depends(get_current_user)])
 
 
 # ─── Leads (CRM Pipeline) ────────────────────────────────────────────────
@@ -120,6 +122,11 @@ async def win_lead_endpoint(
     lead = await win_lead(db, lead_id, proposal_id)
     if not lead:
         raise HTTPException(status_code=400, detail="Could not close lead as won. Check lead and proposal exist.")
+    await event_bus.emit(Event(
+        name="LeadWon",
+        payload={"lead_id": lead_id, "proposal_id": proposal_id},
+        source_module="commercial_sales",
+    ))
     return lead
 
 
@@ -186,6 +193,11 @@ async def accept_proposal_endpoint(proposal_id: int, db: AsyncSession = Depends(
     proposal = await accept_proposal(db, proposal_id)
     if not proposal:
         raise HTTPException(status_code=404, detail="Proposal not found")
+    await event_bus.emit(Event(
+        name="ProposalAccepted",
+        payload={"proposal_id": proposal_id, "lead_id": proposal.lead_id},
+        source_module="commercial_sales",
+    ))
     return proposal
 
 
@@ -229,6 +241,11 @@ async def activate_subscription_endpoint(
             status_code=400,
             detail="Could not activate. Contract must be of type 'subscription'.",
         )
+    await event_bus.emit(Event(
+        name="SubscriptionActivated",
+        payload={"contract_id": contract_id, "tier": payload.tier, "seats": payload.seats},
+        source_module="commercial_sales",
+    ))
     return sub
 
 
@@ -252,6 +269,11 @@ async def churn_subscription_endpoint(
     sub = await churn_subscription(db, subscription_id, payload.reason)
     if not sub:
         raise HTTPException(status_code=404, detail="Subscription not found")
+    await event_bus.emit(Event(
+        name="SubscriptionChurned",
+        payload={"subscription_id": subscription_id, "reason": payload.reason},
+        source_module="commercial_sales",
+    ))
     return sub
 
 
@@ -327,6 +349,11 @@ async def create_retention_action(
     action = RetentionAction(subscription_id=subscription_id, **payload.model_dump())
     db.add(action)
     await db.flush()
+    await event_bus.emit(Event(
+        name="RetentionActionCreated",
+        payload={"subscription_id": subscription_id, "action_type": payload.action_type},
+        source_module="commercial_sales",
+    ))
     return action
 
 

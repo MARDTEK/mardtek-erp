@@ -6,6 +6,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.auth.dependencies import RoleChecker, get_current_user
 from app.core.database import get_db
 from app.core.event_bus import Event, event_bus
 from app.modules.pmo_projects.domain.logic import (
@@ -52,7 +53,7 @@ from app.modules.pmo_projects.schemas.dto import (
     WeeklyReportUpdate,
 )
 
-router = APIRouter()
+router = APIRouter(dependencies=[Depends(get_current_user)])
 
 
 # ─── Projects ────────────────────────────────────────────────────────────

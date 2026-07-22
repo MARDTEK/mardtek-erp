@@ -6,13 +6,16 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.auth.dependencies import RoleChecker, get_current_user
 from app.core.database import get_db
+from app.core.event_bus import Event, event_bus
 from app.modules.quality_management.domain.logic import (
     approve_document,
     close_nc,
     complete_audit,
     get_expired_documents,
     implement_improvement,
+    transition_nc_status,
     verify_action_effectiveness,
 )
 from app.modules.quality_management.domain.models import (
@@ -40,12 +43,13 @@ from app.modules.quality_management.schemas.dto import (
     ImprovementResponse,
     NCCreate,
     NCResponse,
+    NCStateTransition,
     NCUpdateRootCause,
     ProcessOwnerCreate,
     ProcessOwnerResponse,
 )
 
-router = APIRouter()
+router = APIRouter(dependencies=[Depends(get_current_user)])
 
 
 # ─── Documents ───────────────────────────────────────────────────────────
@@ -75,6 +79,17 @@ async def create_document(payload: DocumentCreate, db: AsyncSession = Depends(ge
     doc = Document(**payload.model_dump())
     db.add(doc)
     await db.flush()
+
+    await event_bus.emit(Event(
+        name="DocumentCreated",
+        payload={
+            "document_id": doc.id,
+            "code": doc.code,
+            "title": doc.title,
+        },
+        source_module="quality_management",
+    ))
+
     return doc
 
 
@@ -99,7 +114,7 @@ async def update_document(document_id: int, payload: DocumentUpdate, db: AsyncSe
     return doc
 
 
-@router.delete("/documents/{document_id}", status_code=status.HTTP_204_NO_CONTENT)
+@router.delete("/documents/{document_id}", status_code=status.HTTP_204_NO_CONTENT, dependencies=[Depends(RoleChecker("admin", "manager"))])
 async def delete_document(document_id: int, db: AsyncSession = Depends(get_db)):
     result = await db.execute(select(Document).where(Document.id == document_id))
     doc = result.scalar_one_or_none()
@@ -118,6 +133,16 @@ async def approve_document_endpoint(
     doc = await approve_document(db, document_id, approved_by)
     if not doc:
         raise HTTPException(status_code=404, detail="Document not found")
+
+    await event_bus.emit(Event(
+        name="DocumentApproved",
+        payload={
+            "document_id": doc.id,
+            "approved_by": approved_by,
+        },
+        source_module="quality_management",
+    ))
+
     return doc
 
 
@@ -143,6 +168,17 @@ async def create_non_conformity(payload: NCCreate, db: AsyncSession = Depends(ge
     nc = NonConformity(**payload.model_dump())
     db.add(nc)
     await db.flush()
+
+    await event_bus.emit(Event(
+        name="NonConformityOpened",
+        payload={
+            "nc_id": nc.id,
+            "code": nc.code,
+            "severity": nc.severity,
+        },
+        source_module="quality_management",
+    ))
+
     return nc
 
 
@@ -167,6 +203,28 @@ async def update_root_cause(nc_id: int, payload: NCUpdateRootCause, db: AsyncSes
     return nc
 
 
+@router.patch("/non-conformities/{nc_id}/transition", response_model=NCResponse)
+async def transition_nc_state(
+    nc_id: int,
+    payload: NCStateTransition,
+    db: AsyncSession = Depends(get_db),
+):
+    nc = await transition_nc_status(db, nc_id, payload.target_status)
+    if not nc:
+        raise HTTPException(status_code=404, detail="Non-conformity not found")
+
+    await event_bus.emit(Event(
+        name="NCStatusTransitioned",
+        payload={
+            "nc_id": nc.id,
+            "target_status": payload.target_status,
+        },
+        source_module="quality_management",
+    ))
+
+    return nc
+
+
 @router.post("/non-conformities/{nc_id}/close", response_model=NCResponse)
 async def close_non_conformity(nc_id: int, db: AsyncSession = Depends(get_db)):
     nc = await close_nc(db, nc_id)
@@ -175,10 +233,17 @@ async def close_non_conformity(nc_id: int, db: AsyncSession = Depends(get_db)):
             status_code=409,
             detail="Cannot close: pending corrective actions or NC not found",
         )
+
+    await event_bus.emit(Event(
+        name="NCClosed",
+        payload={"nc_id": nc.id},
+        source_module="quality_management",
+    ))
+
     return nc
 
 
-@router.delete("/non-conformities/{nc_id}", status_code=status.HTTP_204_NO_CONTENT)
+@router.delete("/non-conformities/{nc_id}", status_code=status.HTTP_204_NO_CONTENT, dependencies=[Depends(RoleChecker("admin", "manager"))])
 async def delete_non_conformity(nc_id: int, db: AsyncSession = Depends(get_db)):
     result = await db.execute(select(NonConformity).where(NonConformity.id == nc_id))
     nc = result.scalar_one_or_none()
@@ -221,6 +286,16 @@ async def create_corrective_action(payload: CorrectiveActionCreate, db: AsyncSes
     nc.status = "corrective_action"
 
     await db.flush()
+
+    await event_bus.emit(Event(
+        name="CorrectiveActionCreated",
+        payload={
+            "action_id": action.id,
+            "nc_id": action.nc_id,
+        },
+        source_module="quality_management",
+    ))
+
     return action
 
 
@@ -242,6 +317,13 @@ async def verify_corrective_action(
     action = await verify_action_effectiveness(db, action_id, payload.effectiveness_review)
     if not action:
         raise HTTPException(status_code=404, detail="Corrective action not found")
+
+    await event_bus.emit(Event(
+        name="CorrectiveActionVerified",
+        payload={"action_id": action.id},
+        source_module="quality_management",
+    ))
+
     return action
 
 
@@ -290,6 +372,16 @@ async def complete_audit_endpoint(
     audit = await complete_audit(db, audit_id, findings_summary, result, report_url)
     if not audit:
         raise HTTPException(status_code=404, detail="Audit not found")
+
+    await event_bus.emit(Event(
+        name="AuditCompleted",
+        payload={
+            "audit_id": audit.id,
+            "result": result,
+        },
+        source_module="quality_management",
+    ))
+
     return audit
 
 
@@ -358,7 +450,7 @@ async def get_process_owner(process_code: str, db: AsyncSession = Depends(get_db
     return owner
 
 
-@router.delete("/process-owners/{owner_id}", status_code=status.HTTP_204_NO_CONTENT)
+@router.delete("/process-owners/{owner_id}", status_code=status.HTTP_204_NO_CONTENT, dependencies=[Depends(RoleChecker("admin", "manager"))])
 async def delete_process_owner(owner_id: int, db: AsyncSession = Depends(get_db)):
     result = await db.execute(select(ProcessOwner).where(ProcessOwner.id == owner_id))
     owner = result.scalar_one_or_none()
@@ -409,4 +501,11 @@ async def implement_improvement_endpoint(
     imp = await implement_improvement(db, improvement_id)
     if not imp:
         raise HTTPException(status_code=404, detail="Improvement not found")
+
+    await event_bus.emit(Event(
+        name="ImprovementImplemented",
+        payload={"improvement_id": imp.id},
+        source_module="quality_management",
+    ))
+
     return imp

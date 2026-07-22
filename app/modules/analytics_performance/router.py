@@ -7,6 +7,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.auth.dependencies import RoleChecker, get_current_user
 from app.core.database import get_db
 from app.core.event_bus import Event, event_bus
 from app.modules.analytics_performance.domain.logic import (
@@ -42,7 +43,7 @@ from app.modules.analytics_performance.schemas.dto import (
     TrendResult,
 )
 
-router = APIRouter()
+router = APIRouter(dependencies=[Depends(get_current_user)])
 
 
 # ─── Performance Indicators ──────────────────────────────────────────────
@@ -99,7 +100,7 @@ async def update_indicator(
     return indicator
 
 
-@router.delete("/indicators/{indicator_id}", status_code=status.HTTP_204_NO_CONTENT)
+@router.delete("/indicators/{indicator_id}", status_code=status.HTTP_204_NO_CONTENT, dependencies=[Depends(RoleChecker("admin", "manager"))])
 async def delete_indicator(indicator_id: int, db: AsyncSession = Depends(get_db)):
     result = await db.execute(
         select(PerformanceIndicator).where(PerformanceIndicator.id == indicator_id)
@@ -375,7 +376,7 @@ async def update_dashboard(
     return dashboard
 
 
-@router.delete("/dashboards/{dashboard_id}", status_code=status.HTTP_204_NO_CONTENT)
+@router.delete("/dashboards/{dashboard_id}", status_code=status.HTTP_204_NO_CONTENT, dependencies=[Depends(RoleChecker("admin", "manager"))])
 async def delete_dashboard(dashboard_id: int, db: AsyncSession = Depends(get_db)):
     result = await db.execute(
         select(PerformanceDashboard).where(PerformanceDashboard.id == dashboard_id)

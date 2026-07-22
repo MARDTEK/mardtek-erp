@@ -6,6 +6,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.auth.dependencies import RoleChecker, get_current_user
 from app.core.database import get_db
 from app.core.event_bus import Event, event_bus
 from app.modules.human_resources.domain.logic import (
@@ -47,7 +48,7 @@ from app.modules.human_resources.schemas.dto import (
     StaffRegisterUpdate,
 )
 
-router = APIRouter()
+router = APIRouter(dependencies=[Depends(get_current_user)])
 
 
 # ═══════════════════════════════════════════════════════════════════════════
@@ -98,7 +99,7 @@ async def update_job_description(jd_id: int, payload: JobDescriptionUpdate, db: 
     return jd
 
 
-@router.delete("/job-descriptions/{jd_id}", status_code=204)
+@router.delete("/job-descriptions/{jd_id}", status_code=204, dependencies=[Depends(RoleChecker("admin", "manager"))])
 async def delete_job_description(jd_id: int, db: AsyncSession = Depends(get_db)):
     result = await db.execute(select(JobDescription).where(JobDescription.id == jd_id))
     jd = result.scalar_one_or_none()
@@ -439,7 +440,7 @@ async def update_staff_entry(staff_id: int, payload: StaffRegisterUpdate, db: As
     return entry
 
 
-@router.delete("/staff/{staff_id}", status_code=204)
+@router.delete("/staff/{staff_id}", status_code=204, dependencies=[Depends(RoleChecker("admin", "manager"))])
 async def delete_staff_entry(staff_id: int, db: AsyncSession = Depends(get_db)):
     result = await db.execute(select(StaffRegister).where(StaffRegister.id == staff_id))
     entry = result.scalar_one_or_none()

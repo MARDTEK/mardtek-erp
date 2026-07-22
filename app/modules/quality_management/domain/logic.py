@@ -74,6 +74,71 @@ async def close_nc(db: AsyncSession, nc_id: int) -> Optional[NonConformity]:
     return nc
 
 
+async def transition_nc_status(
+    db: AsyncSession, nc_id: int, target_status: str
+) -> Optional[NonConformity]:
+    """Transition NC status with state-machine validation.
+
+    Allowed transitions:
+      - open         → investigating       (always allowed)
+      - investigating → corrective_action  (requires at least one CA)
+      - corrective_action → closed         (requires all CAs verified)
+
+    Raises HTTPException 409 for invalid transitions.
+    Returns None if NC not found.
+    """
+    from fastapi import HTTPException
+
+    result = await db.execute(
+        select(NonConformity).where(NonConformity.id == nc_id)
+    )
+    nc = result.scalar_one_or_none()
+    if nc is None:
+        return None
+
+    # Idempotent: already at target status → no-op success
+    if nc.status.value == target_status:
+        return nc
+
+    if nc.status == NCStatus.OPEN and target_status == "investigating":
+        nc.status = NCStatus.INVESTIGATING
+
+    elif nc.status == NCStatus.INVESTIGATING and target_status == "corrective_action":
+        ca_result = await db.execute(
+            select(CorrectiveAction).where(CorrectiveAction.nc_id == nc_id)
+        )
+        actions = list(ca_result.scalars().all())
+        if not actions:
+            raise HTTPException(
+                status_code=409,
+                detail="Cannot transition: no corrective actions defined for this NC",
+            )
+        nc.status = NCStatus.CORRECTIVE_ACTION
+
+    elif nc.status == NCStatus.CORRECTIVE_ACTION and target_status == "closed":
+        ca_result = await db.execute(
+            select(CorrectiveAction).where(CorrectiveAction.nc_id == nc_id)
+        )
+        actions = list(ca_result.scalars().all())
+        if actions and any(a.status != ActionStatus.VERIFIED for a in actions):
+            raise HTTPException(
+                status_code=409,
+                detail="Cannot close: not all corrective actions are verified",
+            )
+        from datetime import datetime, timezone
+        nc.status = NCStatus.CLOSED
+        nc.closed_at = datetime.now(timezone.utc)
+
+    else:
+        raise HTTPException(
+            status_code=409,
+            detail=f"Cannot transition from {nc.status.value} to {target_status}",
+        )
+
+    await db.flush()
+    return nc
+
+
 # ─── Corrective Action Logic ────────────────────────────────────────────
 
 async def verify_action_effectiveness(

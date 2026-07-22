@@ -13,7 +13,7 @@ import pytest
 import pytest_asyncio
 from fastapi import FastAPI
 from httpx import ASGITransport, AsyncClient
-from sqlalchemy import create_engine
+from sqlalchemy import create_engine, text
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 
 from app.core.config import Settings
@@ -31,6 +31,7 @@ from app.modules.analytics_performance.domain import models as _ap_models   # no
 from app.modules.customer_experience.domain import models as _cx_models     # noqa: F401
 from app.modules.infrastructure_it.domain import models as _infra_models    # noqa: F401
 from app.modules.human_resources.domain import models as _hr_models         # noqa: F401
+from app.auth import models as _auth_models                                 # noqa: F401
 
 # ── Test settings ──────────────────────────────────────────────────────────
 
@@ -45,11 +46,30 @@ def _sync_db_url(async_url: str) -> str:
     return async_url.replace("postgresql+asyncpg://", "postgresql://")
 
 
+def _drop_all_enums(engine):
+    """Drop all ENUM types in the public schema to avoid collisions across sessions."""
+    with engine.connect() as conn:
+        conn.execute(text("""
+            DO $$ DECLARE
+                r RECORD;
+            BEGIN
+                FOR r IN SELECT typname FROM pg_type
+                    WHERE typtype = 'e'
+                      AND typnamespace = (SELECT oid FROM pg_namespace WHERE nspname = 'public')
+                LOOP
+                    EXECUTE 'DROP TYPE IF EXISTS ' || quote_ident(r.typname) || ' CASCADE';
+                END LOOP;
+            END $$;
+        """))
+        conn.commit()
+
+
 @pytest.fixture(scope="session")
 def _ddl_engine():
     """Sync engine used once per session to create / drop tables."""
     sync_url = _sync_db_url(TEST_DB_URL)
     engine = create_engine(sync_url, echo=False)
+    _drop_all_enums(engine)
     Base.metadata.create_all(engine)
     yield engine
     Base.metadata.drop_all(engine)
@@ -84,6 +104,7 @@ async def client(
     # Build a minimal test app with the same routers but NO lifespan
     app = FastAPI(title="test")
 
+    from app.auth.router import router as auth_router
     from app.modules.quality_management.router import router as quality_router
     from app.modules.commercial_sales.router import router as commercial_router
     from app.modules.pmo_projects.router import router as pmo_projects_router
@@ -96,6 +117,7 @@ async def client(
     from app.modules.infrastructure_it.router import router as infra_router
     from app.modules.human_resources.router import router as hr_router
 
+    app.include_router(auth_router)
     app.include_router(quality_router, prefix="/api/v1/quality")
     app.include_router(commercial_router, prefix="/api/v1/commercial")
     app.include_router(pmo_projects_router, prefix="/api/v1/projects")
@@ -121,3 +143,19 @@ async def client(
     transport = ASGITransport(app=app)
     async with AsyncClient(transport=transport, base_url="http://test") as ac:
         yield ac
+
+
+@pytest_asyncio.fixture
+async def admin_token(client: AsyncClient) -> str:
+    """Register an admin user and return a valid JWT token."""
+    await client.post("/auth/register", json={
+        "username": "admin",
+        "email": "admin@test.com",
+        "password": "password123",
+        "role": "admin",
+    })
+    resp = await client.post("/auth/login", json={
+        "username": "admin",
+        "password": "password123",
+    })
+    return resp.json()["access_token"]
