@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="en" class="h-full">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="csrf-token" content="{{ csrf_token or '' }}">
+  <title>{% block title %}MARDTEK ERP{% endblock %}</title>
+
+  <!-- TailwindCSS CDN (dev) -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            primary: { 50: '#eff6ff', 100: '#dbeafe', 200: '#bfdbfe', 300: '#93c5fd', 400: '#60a5fa', 500: '#3b82f6', 600: '#2563eb', 700: '#1d4ed8', 800: '#1e40af', 900: '#1e3a8a' },
+            secondary: { 50: '#f9fafb', 100: '#f3f4f6', 200: '#e5e7eb', 300: '#d1d5db', 400: '#9ca3af', 500: '#6b7280', 600: '#4b5563', 700: '#374151', 800: '#1f2937', 900: '#111827' },
+          }
+        }
+      }
+    }
+  </script>
+
+  <!-- Alpine.js -->
+  <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+
+  <!-- HTMX -->
+  <script src="https://unpkg.com/htmx.org@1.9.12"></script>
+
+  <!-- Custom CSS -->
+  <link rel="stylesheet" href="/static/css/app.css">
+</head>
+<body class="h-full bg-gray-50">
+
+  <!-- Toast notifications -->
+  <div x-data x-cloak class="fixed bottom-4 right-4 z-50 space-y-2">
+    <template x-for="toast in $store.toasts.items" :key="toast.id">
+      <div x-show="true" x-transition:enter="toast-enter"
+           :class="{
+             'bg-emerald-50 text-emerald-800 border border-emerald-300': toast.type === 'success',
+             'bg-red-50 text-red-800 border border-red-300': toast.type === 'error',
+             'bg-amber-50 text-amber-800 border border-amber-300': toast.type === 'warning',
+             'bg-sky-50 text-sky-800 border border-sky-300': toast.type === 'info'
+           }"
+           class="flex items-center gap-2 px-4 py-3 rounded-lg shadow-lg text-sm max-w-sm">
+        <span x-text="toast.message"></span>
+        <button @click="$store.toasts.remove(toast.id)" class="ml-2 text-current opacity-50 hover:opacity-100">&times;</button>
+      </div>
+    </template>
+  </div>
+
+  {% from 'components/_sidebar.html' import sidebar %}
+  {% from 'components/_topbar.html' import topbar %}
+
+  {% block body %}
+  <div class="flex h-full">
+    {{ sidebar(current_user) }}
+
+    <!-- Main area -->
+    <div class="flex-1 flex flex-col min-h-screen">
+      {{ topbar(current_user, self.page_title()) }}
+
+      <!-- Content area — HTMX swap target -->
+      <main id="main-content" class="flex-1 p-6 overflow-auto">
+        {% block content %}{% endblock %}
+      </main>
+    </div>
+  </div>
+  {% endblock %}
+
+  <!-- Custom JS -->
+  <script src="/static/js/app.js"></script>
+  {% block scripts %}{% endblock %}
+</body>
+</html>

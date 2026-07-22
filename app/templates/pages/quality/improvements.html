@@ -1,0 +1,62 @@
+{% extends "base.html" %}
+{% from 'macros.html' import status_badge, pagination, search_form %}
+{% block title %}Improvements — Quality Management{% endblock %}
+{% block page_title %}Continuous Improvement{% endblock %}
+
+{% block content %}
+<div class="space-y-4" x-data="{showCreate:false}">
+  <div class="flex items-center justify-between">
+    <p class="text-sm text-secondary-500">{{ total }} improvement{{ 's' if total != 1 }}</p>
+    <button @click="showCreate = true" class="px-4 py-2 bg-primary-600 text-white rounded-lg text-sm font-medium hover:bg-primary-700">+ New Improvement</button>
+  </div>
+
+  {{ search_form('/quality/improvements', search) }}
+
+  <div id="table-container"
+       hx-get="/quality/improvements/table?page={{ page }}{% if search %}&search={{ search }}{% endif %}"
+       hx-trigger="load" hx-swap="innerHTML">
+    <div class="animate-pulse text-secondary-400 text-sm py-8 text-center">Loading...</div>
+  </div>
+
+  <!-- Create Modal -->
+  <div x-show="showCreate" x-cloak class="fixed inset-0 z-50 flex items-center justify-center">
+    <div class="fixed inset-0 bg-black/50" @click="showCreate = false"></div>
+    <div class="relative bg-white rounded-xl shadow-xl w-full max-w-lg mx-4 p-6">
+      <h3 class="text-lg font-semibold mb-4">New Improvement</h3>
+      <form hx-post="/quality/improvements" hx-target="#table-container" hx-swap="innerHTML" @submit="showCreate = false">
+        <div class="space-y-3">
+          <div class="grid grid-cols-2 gap-3">
+            <div>
+              <label class="block text-sm font-medium text-secondary-700 mb-1">Code</label>
+              <input name="code" required placeholder="IMP-2026-001" class="w-full px-3 py-2 border border-secondary-200 rounded-lg text-sm">
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-secondary-700 mb-1">Source</label>
+              <select name="source" required class="w-full px-3 py-2 border border-secondary-200 rounded-lg text-sm">
+                <option value="audit">Audit</option><option value="suggestion">Suggestion</option>
+                <option value="data">Data Analysis</option><option value="other">Other</option>
+              </select>
+            </div>
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-secondary-700 mb-1">Description</label>
+            <textarea name="description" required rows="2" class="w-full px-3 py-2 border border-secondary-200 rounded-lg text-sm focus:ring-2 focus:ring-primary-500"></textarea>
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-secondary-700 mb-1">Expected Benefit</label>
+            <textarea name="expected_benefit" rows="2" class="w-full px-3 py-2 border border-secondary-200 rounded-lg text-sm focus:ring-2 focus:ring-primary-500"></textarea>
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-secondary-700 mb-1">Responsible</label>
+            <input name="responsible" required class="w-full px-3 py-2 border border-secondary-200 rounded-lg text-sm">
+          </div>
+        </div>
+        <div class="flex justify-end gap-2 mt-4">
+          <button type="button" @click="showCreate = false" class="px-4 py-2 text-secondary-600 text-sm rounded-lg">Cancel</button>
+          <button type="submit" class="px-4 py-2 bg-primary-600 text-white text-sm rounded-lg hover:bg-primary-700">Create</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+{% endblock %}

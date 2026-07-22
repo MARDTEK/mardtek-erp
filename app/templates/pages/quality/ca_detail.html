@@ -1,0 +1,53 @@
+{% extends "base.html" %}
+{% from 'macros.html' import status_badge %}
+{% block title %}{{ action.code }} — Corrective Actions{% endblock %}
+{% block page_title %}CA {{ action.code }}{% endblock %}
+
+{% block content %}
+<div class="space-y-6" x-data="{showDelete:false}">
+  <div class="flex items-start justify-between">
+    <div>
+      <p class="text-secondary-500 text-sm">NC #{{ action.nc_id }} | {{ action.responsible }}</p>
+      <h2 class="text-xl font-bold text-gray-900 mt-1">{{ action.description[:120] }}</h2>
+    </div>
+    <div class="flex items-center gap-2">
+      {{ status_badge(action.status) }}
+      <button @click="showDelete = true" class="px-3 py-1.5 border border-red-200 text-red-600 text-xs rounded-lg hover:bg-red-50">Delete</button>
+    </div>
+  </div>
+
+  <div class="bg-white rounded-lg border p-6">
+    <dl class="grid grid-cols-2 gap-4 text-sm">
+      <div><dt class="text-secondary-500">Deadline</dt><dd class="font-medium mt-1">{{ action.deadline.strftime('%Y-%m-%d') }}</dd></div>
+      <div><dt class="text-secondary-500">Completed</dt><dd class="font-medium mt-1">{{ action.completed_at.strftime('%Y-%m-%d') if action.completed_at else '—' }}</dd></div>
+      <div class="col-span-2"><dt class="text-secondary-500">Implementation Evidence</dt><dd class="mt-1">{{ action.implementation_evidence or '—' }}</dd></div>
+      <div class="col-span-2"><dt class="text-secondary-500">Effectiveness Review</dt><dd class="mt-1">{{ action.effectiveness_review or '—' }}</dd></div>
+    </dl>
+  </div>
+
+  {% if action.status != 'verified' %}
+  <div class="bg-white rounded-lg border p-6">
+    <h3 class="font-semibold text-sm mb-3">Verify Effectiveness</h3>
+    <form method="post" action="/quality/corrective-actions/{{ action.id }}/verify">
+      <textarea name="effectiveness_review" rows="3" required placeholder="Describe effectiveness review..."
+                class="w-full px-3 py-2 border border-secondary-200 rounded-lg text-sm focus:ring-2 focus:ring-primary-500"></textarea>
+      <button type="submit" class="mt-2 px-4 py-2 bg-emerald-600 text-white text-sm rounded-lg hover:bg-emerald-700">Mark as Verified</button>
+    </form>
+  </div>
+  {% endif %}
+
+  <!-- Delete -->
+  <div x-show="showDelete" x-cloak class="fixed inset-0 z-50 flex items-center justify-center">
+    <div class="fixed inset-0 bg-black/50" @click="showDelete = false"></div>
+    <div class="relative bg-white rounded-xl shadow-xl w-full max-w-sm mx-4 p-6 text-center">
+      <h3 class="text-lg font-semibold mb-2">Delete Corrective Action?</h3>
+      <div class="flex justify-center gap-2 mt-4">
+        <button @click="showDelete = false" class="px-4 py-2 text-secondary-600 text-sm rounded-lg">Cancel</button>
+        <form method="post" action="/quality/corrective-actions/{{ action.id }}/delete" class="inline">
+          <button type="submit" class="px-4 py-2 bg-red-600 text-white text-sm rounded-lg hover:bg-red-700">Delete</button>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

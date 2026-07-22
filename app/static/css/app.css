@@ -1,0 +1,36 @@
+/* MARDTEK ERP — Custom styles (TailwindCSS CDN handles most styling) */
+
+/* HTMX loading indicator */
+.htmx-request .htmx-indicator {
+  display: inline-block;
+}
+.htmx-request .htmx-indicator {
+  display: none;
+}
+.htmx-request.htmx-indicator {
+  display: inline-block;
+}
+
+/* Smooth transitions */
+.htmx-swapping {
+  opacity: 0;
+  transition: opacity 0.15s ease-out;
+}
+.htmx-settling {
+  opacity: 1;
+  transition: opacity 0.15s ease-in;
+}
+
+/* Sidebar transition */
+.sidebar-transition {
+  transition: width 0.2s ease-in-out, transform 0.2s ease-in-out;
+}
+
+/* Toast animation */
+@keyframes slide-in-right {
+  from { transform: translateX(100%); opacity: 0; }
+  to { transform: translateX(0); opacity: 1; }
+}
+.toast-enter {
+  animation: slide-in-right 0.3s ease-out;
+}

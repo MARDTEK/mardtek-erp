@@ -3,10 +3,13 @@
 from __future__ import annotations
 
 from contextlib import asynccontextmanager
+from pathlib import Path
 from typing import AsyncGenerator
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import RedirectResponse
+from fastapi.staticfiles import StaticFiles
 from sqlalchemy import select
 
 from app.auth.models import User
@@ -14,6 +17,9 @@ from app.auth.router import router as auth_router
 from app.auth.service import hash_password
 from app.core.config import settings
 from app.core.database import Base, async_session_factory, dispose_engine, get_engine
+from app.web.routes.auth import router as web_auth_router
+from app.web.routes.dashboard import router as web_dashboard_router
+from app.web.routes.quality import router as web_quality_router
 from app.modules.commercial_sales.router import router as commercial_router
 from app.modules.pmo_projects.router import router as pmo_projects_router
 from app.modules.training_services.router import router as training_router
@@ -67,6 +73,11 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+# ── Static files ────────────────────────────────────────────────────────
+_static_dir = Path(__file__).resolve().parent / "static"
+_static_dir.mkdir(exist_ok=True)
+app.mount("/static", StaticFiles(directory=str(_static_dir)), name="static")
+
 
 @app.get("/health")
 async def health():
@@ -74,6 +85,9 @@ async def health():
 
 
 app.include_router(auth_router)
+app.include_router(web_auth_router)  # Login/logout HTML routes
+app.include_router(web_dashboard_router)  # Dashboard HTML route
+app.include_router(web_quality_router)  # Quality Management HTML routes
 app.include_router(quality_router, prefix="/api/v1/quality", tags=["Quality Management — P2"])
 app.include_router(commercial_router, prefix="/api/v1/commercial", tags=["Commercial Sales — P3"])
 app.include_router(strategic_router, prefix="/api/v1/strategic", tags=["Strategic Management — P1"])
@@ -85,3 +99,9 @@ app.include_router(customer_experience_router, prefix="/api/v1/customer-satisfac
 app.include_router(infrastructure_router, prefix="/api/v1/infrastructure", tags=["Infrastructure & Technology — P8"])
 app.include_router(human_resources_router, prefix="/api/v1/hr", tags=["HR Management — P7"])
 app.include_router(procurement_router, prefix="/api/v1/procurement", tags=["Procurement & Supplier Management — P9"])
+
+
+@app.get("/", include_in_schema=False)
+async def root():
+    """Redirect root to login page."""
+    return RedirectResponse(url="/login", status_code=302)

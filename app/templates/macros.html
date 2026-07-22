@@ -1,0 +1,60 @@
+{# Shared macros for Quality Management pages #}
+
+{% macro status_badge(status) -%}
+<span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium
+  {% if status == 'draft' or status == 'open' or status == 'planned' or status == 'proposed' %}bg-secondary-100 text-secondary-700
+  {% elif status == 'approved' or status == 'completed' or status == 'verified' or status == 'implemented' or status == 'evaluated' %}bg-emerald-100 text-emerald-700
+  {% elif status == 'obsolete' or status == 'closed' %}bg-red-100 text-red-700
+  {% elif status == 'in_progress' or status == 'investigating' or status == 'reviewed' %}bg-amber-100 text-amber-700
+  {% elif status == 'corrective_action' or status == 'verification' %}bg-blue-100 text-blue-700
+  {% else %}bg-secondary-100 text-secondary-600{% endif %}">
+  {{ status | replace('_', ' ') | title }}
+</span>
+{%- endmacro %}
+
+{% macro severity_badge(severity) -%}
+<span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium
+  {% if severity == 'critical' %}bg-red-100 text-red-700
+  {% elif severity == 'major' %}bg-amber-100 text-amber-700
+  {% else %}bg-secondary-100 text-secondary-600{% endif %}">
+  {{ severity | title }}
+</span>
+{%- endmacro %}
+
+{% macro pagination(page, total_pages, base_url, search='') %}
+{% if total_pages > 1 %}
+<nav class="flex items-center justify-between mt-4 text-sm">
+  <span class="text-secondary-500">Page {{ page }} of {{ total_pages }}</span>
+  <div class="flex gap-1">
+    {% if page > 1 %}
+    <a href="{{ base_url }}?page={{ page - 1 }}{% if search %}&search={{ search }}{% endif %}"
+       class="px-3 py-1 rounded border border-secondary-200 hover:bg-secondary-50">Prev</a>
+    {% endif %}
+    {% if page < total_pages %}
+    <a href="{{ base_url }}?page={{ page + 1 }}{% if search %}&search={{ search }}{% endif %}"
+       class="px-3 py-1 rounded border border-secondary-200 hover:bg-secondary-50">Next</a>
+    {% endif %}
+  </div>
+</nav>
+{% endif %}
+{% endmacro %}
+
+{% macro search_form(base_url, search='') %}
+<form method="get" action="{{ base_url }}" class="flex gap-2">
+  <input type="text" name="search" value="{{ search }}" placeholder="Search..."
+         class="flex-1 px-3 py-2 border border-secondary-200 rounded-lg text-sm focus:ring-2 focus:ring-primary-500 focus:border-primary-500">
+  <button type="submit" class="px-4 py-2 bg-secondary-100 text-secondary-700 rounded-lg text-sm hover:bg-secondary-200">Search</button>
+  {% if search %}
+  <a href="{{ base_url }}" class="px-3 py-2 text-secondary-500 text-sm hover:text-secondary-700">Clear</a>
+  {% endif %}
+</form>
+{% endmacro %}
+
+{% macro empty_state(message="No records found") %}
+<div class="text-center py-12 text-secondary-400">
+  <svg class="mx-auto h-12 w-12 mb-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4" />
+  </svg>
+  <p class="text-sm">{{ message }}</p>
+</div>
+{% endmacro %}

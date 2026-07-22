@@ -1,0 +1,35 @@
+{% extends "base.html" %}
+{% block title %}Dashboard — MARDTEK ERP{% endblock %}
+{% block page_title %}Dashboard{% endblock %}
+
+{% block content %}
+<div class="space-y-6">
+  <!-- Welcome -->
+  <div class="flex items-center justify-between">
+    <div>
+      <h2 class="text-2xl font-bold text-gray-900">Welcome back{% if current_user %}, {{ current_user.role }}{% endif %}</h2>
+      <p class="text-sm text-secondary-500 mt-1">Overview of all SGC modules</p>
+    </div>
+  </div>
+
+  <!-- Module cards grid -->
+  <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+    {% for mod in modules %}
+    <a href="{{ mod.prefix }}" class="block bg-white rounded-xl border border-gray-200 p-5 hover:shadow-md hover:border-primary-300 transition-all group">
+      <div class="flex items-start justify-between mb-3">
+        <div>
+          <span class="inline-block px-2 py-0.5 bg-primary-50 text-primary-700 text-xs font-semibold rounded">{{ mod.code }}</span>
+        </div>
+        <span class="text-2xl font-bold text-gray-900">{{ mod.total }}</span>
+      </div>
+      <h3 class="text-sm font-semibold text-gray-800 group-hover:text-primary-600 transition-colors">{{ mod.name }}</h3>
+      <div class="mt-2 flex flex-wrap gap-x-3 gap-y-1">
+        {% for label, count in mod.details %}
+        <span class="text-xs text-secondary-500">{{ label }}: {{ count }}</span>
+        {% endfor %}
+      </div>
+    </a>
+    {% endfor %}
+  </div>
+</div>
+{% endblock %}

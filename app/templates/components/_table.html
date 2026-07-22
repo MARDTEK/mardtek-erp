@@ -1,0 +1,111 @@
+{# Reusable data table macro #}
+{# 
+  Usage: {{ table_macro.table(
+    columns=[("code", "Code"), ("title", "Title"), ("status", "Status")],
+    rows=items,
+    detail_url="/quality/documents",
+    id_field="id"
+  ) }}
+#}
+
+{% macro table(columns, rows, detail_url="", id_field="id", status_field="status") %}
+<div class="overflow-x-auto">
+  <table class="min-w-full divide-y divide-gray-200">
+    <thead class="bg-gray-50">
+      <tr>
+        {% for field, label in columns %}
+        <th class="px-4 py-3 text-left text-xs font-semibold text-secondary-600 uppercase tracking-wider">{{ label }}</th>
+        {% endfor %}
+        <th class="px-4 py-3 text-right text-xs font-semibold text-secondary-600 uppercase tracking-wider">Actions</th>
+      </tr>
+    </thead>
+    <tbody class="bg-white divide-y divide-gray-100">
+      {% for row in rows %}
+      <tr class="hover:bg-gray-50 transition-colors">
+        {% for field, label in columns %}
+        <td class="px-4 py-3 text-sm text-gray-700">
+          {% if field == status_field %}
+            {{ badge(row[field]) }}
+          {% else %}
+            {{ row[field] or '—' }}
+          {% endif %}
+        </td>
+        {% endfor %}
+        <td class="px-4 py-3 text-right text-sm">
+          {% if detail_url %}
+          <a href="{{ detail_url }}/{{ row[id_field] }}" 
+             class="text-primary-600 hover:text-primary-800 font-medium">View</a>
+          {% endif %}
+        </td>
+      </tr>
+      {% endfor %}
+      {% if not rows %}
+      <tr>
+        <td colspan="{{ columns|length + 1 }}" class="px-4 py-12 text-center text-secondary-400">
+          <div class="flex flex-col items-center gap-2">
+            <svg class="w-12 h-12 text-secondary-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4"/></svg>
+            <span>No records found</span>
+          </div>
+        </td>
+      </tr>
+      {% endif %}
+    </tbody>
+  </table>
+</div>
+{% endmacro %}
+
+{% macro badge(status) %}
+  {% set colors = {
+    'active': 'bg-emerald-100 text-emerald-700',
+    'approved': 'bg-emerald-100 text-emerald-700',
+    'completed': 'bg-emerald-100 text-emerald-700',
+    'closed': 'bg-emerald-100 text-emerald-700',
+    'verified': 'bg-emerald-100 text-emerald-700',
+    'draft': 'bg-gray-100 text-gray-700',
+    'planned': 'bg-gray-100 text-gray-700',
+    'pending': 'bg-amber-100 text-amber-700',
+    'in_progress': 'bg-sky-100 text-sky-700',
+    'open': 'bg-sky-100 text-sky-700',
+    'review': 'bg-amber-100 text-amber-700',
+    'submitted': 'bg-amber-100 text-amber-700',
+    'rejected': 'bg-red-100 text-red-700',
+    'obsolete': 'bg-red-100 text-red-700',
+    'cancelled': 'bg-red-100 text-red-700',
+    'critical': 'bg-red-100 text-red-700',
+    'major': 'bg-amber-100 text-amber-700',
+    'minor': 'bg-sky-100 text-sky-700',
+  } %}
+  {% set color = colors.get(status, 'bg-gray-100 text-gray-700') %}
+  <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium {{ color }}">{{ status }}</span>
+{% endmacro %}
+
+{# Pagination macro #}
+{% macro pagination(total, skip, limit, base_url) %}
+  {% set total_pages = ((total / limit)|round(0, 'ceil'))|int %}
+  {% set current_page = ((skip / limit)|round(0, 'ceil'))|int + 1 %}
+  {% if total_pages > 1 %}
+  <div class="flex items-center justify-between px-4 py-3 border-t border-gray-200">
+    <span class="text-sm text-secondary-500">
+      Showing {{ skip + 1 }}–{{ [skip + limit, total]|min }} of {{ total }}
+    </span>
+    <div class="flex items-center gap-1">
+      {% if current_page > 1 %}
+      <a href="{{ base_url }}?skip={{ (current_page - 2) * limit }}&limit={{ limit }}"
+         class="px-3 py-1 text-sm border rounded hover:bg-gray-50 transition-colors">Prev</a>
+      {% endif %}
+      {% for p in range(1, total_pages + 1) %}
+        {% if p == current_page %}
+        <span class="px-3 py-1 text-sm bg-primary-600 text-white rounded">{{ p }}</span>
+        {% else %}
+        <a href="{{ base_url }}?skip={{ (p - 1) * limit }}&limit={{ limit }}"
+           class="px-3 py-1 text-sm border rounded hover:bg-gray-50 transition-colors">{{ p }}</a>
+        {% endif %}
+      {% endfor %}
+      {% if current_page < total_pages %}
+      <a href="{{ base_url }}?skip={{ current_page * limit }}&limit={{ limit }}"
+         class="px-3 py-1 text-sm border rounded hover:bg-gray-50 transition-colors">Next</a>
+      {% endif %}
+    </div>
+  </div>
+  {% endif %}
+{% endmacro %}
