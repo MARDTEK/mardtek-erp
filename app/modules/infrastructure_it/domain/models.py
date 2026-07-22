@@ -86,7 +86,7 @@ class InfrastructureRequest(Base):
     resource_type: Mapped[str] = mapped_column(String(20), nullable=False)  # server, license, network, tool, other
     specification: Mapped[str] = mapped_column(Text, nullable=False)
     justification: Mapped[str] = mapped_column(Text, nullable=False)
-    status: Mapped[RequestStatus] = mapped_column(Enum(RequestStatus), default=RequestStatus.SUBMITTED)
+    status: Mapped[RequestStatus] = mapped_column(Enum(RequestStatus, coerce_set_value=True), default=RequestStatus.SUBMITTED)
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), default=lambda: datetime.now(timezone.utc)
     )
@@ -107,7 +107,7 @@ class SlaAgreement(Base):
     uptime_target: Mapped[float] = mapped_column(Float, nullable=False)  # e.g. 99.9
     response_time_minutes: Mapped[int] = mapped_column(Integer, nullable=False)
     resolution_time_minutes: Mapped[int] = mapped_column(Integer, nullable=False)
-    status: Mapped[SlaStatus] = mapped_column(Enum(SlaStatus), default=SlaStatus.ACTIVE)
+    status: Mapped[SlaStatus] = mapped_column(Enum(SlaStatus, coerce_set_value=True), default=SlaStatus.ACTIVE)
     start_date: Mapped[date] = mapped_column(Date, nullable=False)
     end_date: Mapped[date] = mapped_column(Date, nullable=False)
 
@@ -123,11 +123,11 @@ class IncidentReport(Base):
     id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
     code: Mapped[str] = mapped_column(String(20), unique=True, nullable=False, index=True)
     service: Mapped[str] = mapped_column(String(255), nullable=False)
-    severity: Mapped[IncidentSeverity] = mapped_column(Enum(IncidentSeverity), nullable=False)
+    severity: Mapped[IncidentSeverity] = mapped_column(Enum(IncidentSeverity, coerce_set_value=True), nullable=False)
     description: Mapped[str] = mapped_column(Text, nullable=False)
     root_cause: Mapped[Optional[str]] = mapped_column(Text)
     resolution: Mapped[Optional[str]] = mapped_column(Text)
-    status: Mapped[IncidentStatus] = mapped_column(Enum(IncidentStatus), default=IncidentStatus.OPEN)
+    status: Mapped[IncidentStatus] = mapped_column(Enum(IncidentStatus, coerce_set_value=True), default=IncidentStatus.OPEN)
     resolved_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True))
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), default=lambda: datetime.now(timezone.utc)
@@ -170,7 +170,7 @@ class BusinessContinuityPlan(Base):
     risk_assessment: Mapped[dict] = mapped_column(JSON, nullable=False)
     recovery_strategies: Mapped[dict] = mapped_column(JSON, nullable=False)
     status: Mapped[ContinuityPlanStatus] = mapped_column(
-        Enum(ContinuityPlanStatus), default=ContinuityPlanStatus.DRAFT
+        Enum(ContinuityPlanStatus, coerce_set_value=True), default=ContinuityPlanStatus.DRAFT
     )
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), default=lambda: datetime.now(timezone.utc)
@@ -187,12 +187,12 @@ class SecurityIncident(Base):
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
     code: Mapped[str] = mapped_column(String(20), unique=True, nullable=False, index=True)
-    incident_type: Mapped[SecurityIncidentType] = mapped_column(Enum(SecurityIncidentType), nullable=False)
+    incident_type: Mapped[SecurityIncidentType] = mapped_column(Enum(SecurityIncidentType, coerce_set_value=True), nullable=False)
     description: Mapped[str] = mapped_column(Text, nullable=False)
     impact: Mapped[str] = mapped_column(Text, nullable=False)
     containment: Mapped[str] = mapped_column(Text, nullable=False)
     status: Mapped[SecurityIncidentStatus] = mapped_column(
-        Enum(SecurityIncidentStatus), default=SecurityIncidentStatus.OPEN
+        Enum(SecurityIncidentStatus, coerce_set_value=True), default=SecurityIncidentStatus.OPEN
     )
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), default=lambda: datetime.now(timezone.utc)
@@ -209,13 +209,13 @@ class MaintenanceRecord(Base):
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
     asset: Mapped[str] = mapped_column(String(255), nullable=False)
-    maintenance_type: Mapped[MaintenanceType] = mapped_column(Enum(MaintenanceType), nullable=False)
+    maintenance_type: Mapped[MaintenanceType] = mapped_column(Enum(MaintenanceType, coerce_set_value=True), nullable=False)
     description: Mapped[str] = mapped_column(Text, nullable=False)
     scheduled_date: Mapped[date] = mapped_column(Date, nullable=False)
     completed_date: Mapped[Optional[date]] = mapped_column(Date)
     performed_by: Mapped[Optional[str]] = mapped_column(String(255))
     status: Mapped[MaintenanceStatus] = mapped_column(
-        Enum(MaintenanceStatus), default=MaintenanceStatus.SCHEDULED
+        Enum(MaintenanceStatus, coerce_set_value=True), default=MaintenanceStatus.SCHEDULED
     )
 
     def __repr__(self) -> str:
