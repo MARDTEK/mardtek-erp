@@ -355,7 +355,8 @@ class TestAnalyticsAuth:
 
     async def test_viewer_cannot_delete(self, client: AsyncClient):
         """Viewer role must be forbidden from DELETE on indicators."""
-        token = await self._register_and_login(client, "vieweranalytics", "viewer")
+        viewer_token = await self._register_and_login(client, "vieweranalytics", "viewer")
+        admin_token = await self._register_and_login(client, "adminforviewer", "admin")
 
         create = await client.post(
             "/api/v1/analytics/indicators",
@@ -364,20 +365,20 @@ class TestAnalyticsAuth:
                 "name": "Delete Test Indicator",
                 "process_code": "P4",
             },
-            headers=_auth(token),
+            headers=_auth(admin_token),
         )
         assert create.status_code == 201, create.text
         ind_id = create.json()["id"]
 
         resp = await client.delete(
             f"/api/v1/analytics/indicators/{ind_id}",
-            headers=_auth(token),
+            headers=_auth(viewer_token),
         )
         assert resp.status_code == 403
         assert "not allowed" in resp.text
 
     async def test_viewer_can_create(self, client: AsyncClient):
-        """Viewer role must be allowed to POST (create)."""
+        """Viewer role must be forbidden from POST (create)."""
         token = await self._register_and_login(client, "vieweranalytics2", "viewer")
 
         resp = await client.post(
@@ -389,5 +390,57 @@ class TestAnalyticsAuth:
             },
             headers=_auth(token),
         )
+        assert resp.status_code == 403, resp.text
+
+    async def test_admin_can_create(self, client: AsyncClient):
+        token = await self._register_and_login(client, "adminanalytics1", "admin")
+        resp = await client.post(
+            "/api/v1/analytics/indicators",
+            json={"code": "KPI-P11-050", "name": "Admin Indicator", "process_code": "P11"},
+            headers=_auth(token),
+        )
         assert resp.status_code == 201, resp.text
-        assert resp.json()["name"] == "Viewer Indicator"
+
+    async def test_manager_can_create(self, client: AsyncClient):
+        token = await self._register_and_login(client, "mgranalytics1", "manager")
+        resp = await client.post(
+            "/api/v1/analytics/indicators",
+            json={"code": "KPI-P11-051", "name": "Manager Indicator", "process_code": "P11"},
+            headers=_auth(token),
+        )
+        assert resp.status_code == 201, resp.text
+
+    async def test_viewer_cannot_create_indicator(self, client: AsyncClient):
+        """Viewer should be rejected on POST indicators."""
+        admin_token = await self._register_and_login(client, "adminanalytics2", "admin")
+        viewer_token = await self._register_and_login(client, "viewanalytics2", "viewer")
+
+        create = await client.post(
+            "/api/v1/analytics/indicators",
+            json={"code": "KPI-P11-052", "name": "Viewer Test", "process_code": "P11"},
+            headers=_auth(admin_token),
+        )
+        assert create.status_code == 201, create.text
+        ind_id = create.json()["id"]
+
+        resp = await client.delete(
+            f"/api/v1/analytics/indicators/{ind_id}",
+            headers=_auth(viewer_token),
+        )
+        assert resp.status_code == 403
+
+    async def test_admin_can_delete(self, client: AsyncClient):
+        token = await self._register_and_login(client, "adminanalytics3", "admin")
+        create = await client.post(
+            "/api/v1/analytics/indicators",
+            json={"code": "KPI-P11-053", "name": "Delete Test", "process_code": "P11"},
+            headers=_auth(token),
+        )
+        assert create.status_code == 201, create.text
+        ind_id = create.json()["id"]
+
+        resp = await client.delete(
+            f"/api/v1/analytics/indicators/{ind_id}",
+            headers=_auth(token),
+        )
+        assert resp.status_code == 200

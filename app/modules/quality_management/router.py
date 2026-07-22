@@ -143,7 +143,7 @@ async def restore_document(document_id: int, db: AsyncSession = Depends(get_db))
     return doc
 
 
-@router.post("/documents/{document_id}/approve", response_model=DocumentResponse)
+@router.post("/documents/{document_id}/approve", response_model=DocumentResponse, dependencies=[Depends(RoleChecker("admin", "manager"))])
 async def approve_document_endpoint(
     document_id: int,
     approved_by: str,

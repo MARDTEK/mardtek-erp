@@ -209,19 +209,20 @@ class TestCommercialAuth:
         assert resp.status_code == 401
 
     async def test_viewer_cannot_delete_lead(self, client: AsyncClient):
-        token = await self._register_and_login(client, "comviewer", "viewer")
+        viewer_token = await self._register_and_login(client, "comviewer", "viewer")
+        admin_token = await self._register_and_login(client, "admincom", "admin")
 
         create = await client.post(
             "/api/v1/commercial/leads",
             json={"company": "Auth Corp", "contact_name": "Auth U", "contact_email": "au@test.com", "source": "web", "product_line": "SERVICIOS"},
-            headers=_auth(token),
+            headers=_auth(admin_token),
         )
         assert create.status_code == 201, create.text
         lead_id = create.json()["id"]
 
         resp = await client.delete(
             f"/api/v1/commercial/leads/{lead_id}",
-            headers=_auth(token),
+            headers=_auth(viewer_token),
         )
         assert resp.status_code == 405
 
@@ -233,3 +234,21 @@ class TestCommercialAuth:
             headers=_auth(token),
         )
         assert resp.status_code == 201
+
+    async def test_admin_can_create_lead(self, client: AsyncClient):
+        token = await self._register_and_login(client, "admincom1", "admin")
+        resp = await client.post(
+            "/api/v1/commercial/leads",
+            json={"company": "Admin Corp", "contact_name": "Admin U", "contact_email": "au@test.com", "source": "web", "product_line": "SERVICIOS"},
+            headers=_auth(token),
+        )
+        assert resp.status_code == 201, resp.text
+
+    async def test_manager_can_create_lead(self, client: AsyncClient):
+        token = await self._register_and_login(client, "mgrcom1", "manager")
+        resp = await client.post(
+            "/api/v1/commercial/leads",
+            json={"company": "Mgr Corp", "contact_name": "Mgr U", "contact_email": "mu@test.com", "source": "web", "product_line": "SERVICIOS"},
+            headers=_auth(token),
+        )
+        assert resp.status_code == 201, resp.text

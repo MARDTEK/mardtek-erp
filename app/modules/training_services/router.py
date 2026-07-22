@@ -90,7 +90,7 @@ async def list_needs(
     return list(result.scalars().all())
 
 
-@router.post("/needs", response_model=TrainingNeedsResponse, status_code=status.HTTP_201_CREATED)
+@router.post("/needs", response_model=TrainingNeedsResponse, status_code=status.HTTP_201_CREATED, dependencies=[Depends(RoleChecker("admin", "manager"))])
 async def create_need(payload: TrainingNeedsCreate, db: AsyncSession = Depends(get_db)):
     need = TrainingNeedsAssessment(**payload.model_dump())
     db.add(need)
@@ -109,7 +109,7 @@ async def get_need(need_id: int, db: AsyncSession = Depends(get_db)):
     return need
 
 
-@router.patch("/needs/{need_id}", response_model=TrainingNeedsResponse)
+@router.patch("/needs/{need_id}", response_model=TrainingNeedsResponse, dependencies=[Depends(RoleChecker("admin", "manager"))])
 async def update_need(need_id: int, payload: TrainingNeedsUpdate, db: AsyncSession = Depends(get_db)):
     result = await db.execute(
         select(TrainingNeedsAssessment).where(TrainingNeedsAssessment.id == need_id, TrainingNeedsAssessment.is_deleted == False)
@@ -167,7 +167,7 @@ async def list_competency_matrices(
     return list(result.scalars().all())
 
 
-@router.post("/competency-matrices", response_model=CompetencyMatrixResponse, status_code=status.HTTP_201_CREATED)
+@router.post("/competency-matrices", response_model=CompetencyMatrixResponse, status_code=status.HTTP_201_CREATED, dependencies=[Depends(RoleChecker("admin", "manager"))])
 async def create_competency_matrix(payload: CompetencyMatrixCreate, db: AsyncSession = Depends(get_db)):
     matrix = CompetencyMatrix(**payload.model_dump())
     db.add(matrix)
@@ -186,7 +186,7 @@ async def get_competency_matrix(matrix_id: int, db: AsyncSession = Depends(get_d
     return matrix
 
 
-@router.patch("/competency-matrices/{matrix_id}", response_model=CompetencyMatrixResponse)
+@router.patch("/competency-matrices/{matrix_id}", response_model=CompetencyMatrixResponse, dependencies=[Depends(RoleChecker("admin", "manager"))])
 async def update_competency_matrix(
     matrix_id: int,
     payload: CompetencyMatrixUpdate,
@@ -233,6 +233,7 @@ async def restore_competency_matrix(matrix_id: int, db: AsyncSession = Depends(g
 @router.post(
     "/competency-matrices/{matrix_id}/update-gap",
     response_model=CompetencyMatrixResponse,
+    dependencies=[Depends(RoleChecker("admin", "manager"))],
 )
 async def update_gap_endpoint(
     matrix_id: int,
@@ -263,7 +264,7 @@ async def list_courses(
     return list(result.scalars().all())
 
 
-@router.post("/courses", response_model=CourseResponse, status_code=status.HTTP_201_CREATED)
+@router.post("/courses", response_model=CourseResponse, status_code=status.HTTP_201_CREATED, dependencies=[Depends(RoleChecker("admin", "manager"))])
 async def create_course(payload: CourseCreate, db: AsyncSession = Depends(get_db)):
     course = Course(**payload.model_dump())
     db.add(course)
@@ -280,7 +281,7 @@ async def get_course(course_id: int, db: AsyncSession = Depends(get_db)):
     return course
 
 
-@router.patch("/courses/{course_id}", response_model=CourseResponse)
+@router.patch("/courses/{course_id}", response_model=CourseResponse, dependencies=[Depends(RoleChecker("admin", "manager"))])
 async def update_course(course_id: int, payload: CourseUpdate, db: AsyncSession = Depends(get_db)):
     result = await db.execute(select(Course).where(Course.id == course_id, Course.is_deleted == False))
     course = result.scalar_one_or_none()
@@ -336,7 +337,7 @@ async def list_plans(
     return list(result.scalars().all())
 
 
-@router.post("/plans", response_model=TrainingPlanResponse, status_code=status.HTTP_201_CREATED)
+@router.post("/plans", response_model=TrainingPlanResponse, status_code=status.HTTP_201_CREATED, dependencies=[Depends(RoleChecker("admin", "manager"))])
 async def create_plan(payload: TrainingPlanCreate, db: AsyncSession = Depends(get_db)):
     plan = TrainingPlan(**payload.model_dump())
     db.add(plan)
@@ -353,7 +354,7 @@ async def get_plan(plan_id: int, db: AsyncSession = Depends(get_db)):
     return plan
 
 
-@router.patch("/plans/{plan_id}", response_model=TrainingPlanResponse)
+@router.patch("/plans/{plan_id}", response_model=TrainingPlanResponse, dependencies=[Depends(RoleChecker("admin", "manager"))])
 async def update_plan(plan_id: int, payload: TrainingPlanUpdate, db: AsyncSession = Depends(get_db)):
     result = await db.execute(select(TrainingPlan).where(TrainingPlan.id == plan_id, TrainingPlan.is_deleted == False))
     plan = result.scalar_one_or_none()
@@ -412,7 +413,7 @@ async def list_sessions(
     return list(result.scalars().all())
 
 
-@router.post("/sessions", response_model=TrainingSessionResponse, status_code=status.HTTP_201_CREATED)
+@router.post("/sessions", response_model=TrainingSessionResponse, status_code=status.HTTP_201_CREATED, dependencies=[Depends(RoleChecker("admin", "manager"))])
 async def create_session(payload: TrainingSessionCreate, db: AsyncSession = Depends(get_db)):
     # Verify course exists
     course_result = await db.execute(select(Course).where(Course.id == payload.course_id, Course.is_deleted == False))
@@ -436,7 +437,7 @@ async def get_session(session_id: int, db: AsyncSession = Depends(get_db)):
     return session
 
 
-@router.patch("/sessions/{session_id}", response_model=TrainingSessionResponse)
+@router.patch("/sessions/{session_id}", response_model=TrainingSessionResponse, dependencies=[Depends(RoleChecker("admin", "manager"))])
 async def update_session(
     session_id: int,
     payload: TrainingSessionUpdate,
@@ -518,7 +519,7 @@ async def list_evaluations(
     return list(result.scalars().all())
 
 
-@router.post("/evaluations", response_model=TrainingEvaluationResponse, status_code=status.HTTP_201_CREATED)
+@router.post("/evaluations", response_model=TrainingEvaluationResponse, status_code=status.HTTP_201_CREATED, dependencies=[Depends(RoleChecker("admin", "manager"))])
 async def create_evaluation(payload: TrainingEvaluationCreate, db: AsyncSession = Depends(get_db)):
     # Verify session exists
     session_result = await db.execute(
@@ -533,7 +534,7 @@ async def create_evaluation(payload: TrainingEvaluationCreate, db: AsyncSession 
     return evaluation
 
 
-@router.patch("/evaluations/{evaluation_id}", response_model=TrainingEvaluationResponse)
+@router.patch("/evaluations/{evaluation_id}", response_model=TrainingEvaluationResponse, dependencies=[Depends(RoleChecker("admin", "manager"))])
 async def update_evaluation(
     evaluation_id: int,
     payload: TrainingEvaluationUpdate,
@@ -595,7 +596,7 @@ async def list_attendance(
     return list(result.scalars().all())
 
 
-@router.post("/attendance", response_model=AttendanceRecordResponse, status_code=status.HTTP_201_CREATED)
+@router.post("/attendance", response_model=AttendanceRecordResponse, status_code=status.HTTP_201_CREATED, dependencies=[Depends(RoleChecker("admin", "manager"))])
 async def create_attendance(payload: AttendanceRecordCreate, db: AsyncSession = Depends(get_db)):
     # Verify session exists
     session_result = await db.execute(
@@ -621,7 +622,7 @@ async def get_attendance(record_id: int, db: AsyncSession = Depends(get_db)):
     return record
 
 
-@router.patch("/attendance/{record_id}", response_model=AttendanceRecordResponse)
+@router.patch("/attendance/{record_id}", response_model=AttendanceRecordResponse, dependencies=[Depends(RoleChecker("admin", "manager"))])
 async def update_attendance(
     record_id: int,
     payload: AttendanceRecordUpdate,
@@ -690,6 +691,7 @@ async def list_certifications(
     "/certifications",
     response_model=CertificationRecordResponse,
     status_code=status.HTTP_201_CREATED,
+    dependencies=[Depends(RoleChecker("admin", "manager"))],
 )
 async def create_certification(payload: CertificationRecordCreate, db: AsyncSession = Depends(get_db)):
     # Verify course exists
@@ -732,7 +734,7 @@ async def get_certification(cert_id: int, db: AsyncSession = Depends(get_db)):
     return cert
 
 
-@router.patch("/certifications/{cert_id}", response_model=CertificationRecordResponse)
+@router.patch("/certifications/{cert_id}", response_model=CertificationRecordResponse, dependencies=[Depends(RoleChecker("admin", "manager"))])
 async def update_certification(
     cert_id: int,
     payload: CertificationRecordUpdate,
@@ -794,7 +796,7 @@ async def list_manuals(
     return list(result.scalars().all())
 
 
-@router.post("/manuals", response_model=UserManualResponse, status_code=status.HTTP_201_CREATED)
+@router.post("/manuals", response_model=UserManualResponse, status_code=status.HTTP_201_CREATED, dependencies=[Depends(RoleChecker("admin", "manager"))])
 async def create_manual(payload: UserManualCreate, db: AsyncSession = Depends(get_db)):
     manual = UserManual(**payload.model_dump())
     db.add(manual)
@@ -811,7 +813,7 @@ async def get_manual(manual_id: int, db: AsyncSession = Depends(get_db)):
     return manual
 
 
-@router.patch("/manuals/{manual_id}", response_model=UserManualResponse)
+@router.patch("/manuals/{manual_id}", response_model=UserManualResponse, dependencies=[Depends(RoleChecker("admin", "manager"))])
 async def update_manual(
     manual_id: int,
     payload: UserManualUpdate,
@@ -871,7 +873,7 @@ async def list_video_tutorials(
     return list(result.scalars().all())
 
 
-@router.post("/video-tutorials", response_model=VideoTutorialResponse, status_code=status.HTTP_201_CREATED)
+@router.post("/video-tutorials", response_model=VideoTutorialResponse, status_code=status.HTTP_201_CREATED, dependencies=[Depends(RoleChecker("admin", "manager"))])
 async def create_video_tutorial(payload: VideoTutorialCreate, db: AsyncSession = Depends(get_db)):
     tutorial = VideoTutorial(**payload.model_dump())
     db.add(tutorial)
@@ -890,7 +892,7 @@ async def get_video_tutorial(tutorial_id: int, db: AsyncSession = Depends(get_db
     return tutorial
 
 
-@router.patch("/video-tutorials/{tutorial_id}", response_model=VideoTutorialResponse)
+@router.patch("/video-tutorials/{tutorial_id}", response_model=VideoTutorialResponse, dependencies=[Depends(RoleChecker("admin", "manager"))])
 async def update_video_tutorial(
     tutorial_id: int,
     payload: VideoTutorialUpdate,

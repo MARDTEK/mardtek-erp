@@ -65,7 +65,7 @@ async def list_indicators(
     return list(result.scalars().all())
 
 
-@router.post("/indicators", response_model=IndicatorResponse, status_code=status.HTTP_201_CREATED)
+@router.post("/indicators", response_model=IndicatorResponse, status_code=status.HTTP_201_CREATED, dependencies=[Depends(RoleChecker("admin", "manager"))])
 async def create_indicator(payload: IndicatorCreate, db: AsyncSession = Depends(get_db)):
     indicator = PerformanceIndicator(**payload.model_dump())
     db.add(indicator)
@@ -84,7 +84,7 @@ async def get_indicator(indicator_id: int, db: AsyncSession = Depends(get_db)):
     return indicator
 
 
-@router.patch("/indicators/{indicator_id}", response_model=IndicatorResponse)
+@router.patch("/indicators/{indicator_id}", response_model=IndicatorResponse, dependencies=[Depends(RoleChecker("admin", "manager"))])
 async def update_indicator(
     indicator_id: int,
     payload: IndicatorUpdate,
@@ -116,7 +116,7 @@ async def delete_indicator(indicator_id: int, db: AsyncSession = Depends(get_db)
     return {"message": "Indicator deleted successfully", "id": indicator_id}
 
 
-@router.patch("/indicators/{indicator_id}/restore")
+@router.patch("/indicators/{indicator_id}/restore", dependencies=[Depends(RoleChecker("admin", "manager"))])
 async def restore_indicator(indicator_id: int, db: AsyncSession = Depends(get_db)):
     result = await db.execute(
         select(PerformanceIndicator).where(PerformanceIndicator.id == indicator_id)
@@ -155,6 +155,7 @@ async def list_data_records(
     "/indicators/{indicator_id}/record",
     response_model=DataRecordResponse,
     status_code=status.HTTP_201_CREATED,
+    dependencies=[Depends(RoleChecker("admin", "manager"))],
 )
 async def submit_data_record(
     indicator_id: int,
@@ -255,6 +256,7 @@ async def list_trend_reports(
     "/trend-reports",
     response_model=TrendAnalysisResponse,
     status_code=status.HTTP_201_CREATED,
+    dependencies=[Depends(RoleChecker("admin", "manager"))],
 )
 async def create_trend_report(payload: TrendAnalysisCreate, db: AsyncSession = Depends(get_db)):
     report = TrendAnalysisReport(**payload.model_dump())
@@ -286,7 +288,7 @@ async def delete_trend_report(report_id: int, db: AsyncSession = Depends(get_db)
     return {"message": "Trend analysis report deleted successfully", "id": report_id}
 
 
-@router.patch("/trend-reports/{report_id}/restore")
+@router.patch("/trend-reports/{report_id}/restore", dependencies=[Depends(RoleChecker("admin", "manager"))])
 async def restore_trend_report(report_id: int, db: AsyncSession = Depends(get_db)):
     result = await db.execute(select(TrendAnalysisReport).where(TrendAnalysisReport.id == report_id))
     report = result.scalar_one_or_none()
@@ -322,6 +324,7 @@ async def list_kpi_reports(
     "/kpi-reports",
     response_model=KpiReportResponse,
     status_code=status.HTTP_201_CREATED,
+    dependencies=[Depends(RoleChecker("admin", "manager"))],
 )
 async def create_kpi_report(payload: KpiReportCreate, db: AsyncSession = Depends(get_db)):
     report = KpiReport(**payload.model_dump())
@@ -353,7 +356,7 @@ async def delete_kpi_report(report_id: int, db: AsyncSession = Depends(get_db)):
     return {"message": "KPI report deleted successfully", "id": report_id}
 
 
-@router.patch("/kpi-reports/{report_id}/restore")
+@router.patch("/kpi-reports/{report_id}/restore", dependencies=[Depends(RoleChecker("admin", "manager"))])
 async def restore_kpi_report(report_id: int, db: AsyncSession = Depends(get_db)):
     result = await db.execute(select(KpiReport).where(KpiReport.id == report_id))
     report = result.scalar_one_or_none()
@@ -415,6 +418,7 @@ async def list_dashboards(
     "/dashboards",
     response_model=DashboardResponse,
     status_code=status.HTTP_201_CREATED,
+    dependencies=[Depends(RoleChecker("admin", "manager"))],
 )
 async def create_dashboard(payload: DashboardCreate, db: AsyncSession = Depends(get_db)):
     dashboard = PerformanceDashboard(**payload.model_dump())
@@ -434,7 +438,7 @@ async def get_dashboard(dashboard_id: int, db: AsyncSession = Depends(get_db)):
     return dashboard
 
 
-@router.patch("/dashboards/{dashboard_id}", response_model=DashboardResponse)
+@router.patch("/dashboards/{dashboard_id}", response_model=DashboardResponse, dependencies=[Depends(RoleChecker("admin", "manager"))])
 async def update_dashboard(
     dashboard_id: int,
     payload: DashboardUpdate,
@@ -466,7 +470,7 @@ async def delete_dashboard(dashboard_id: int, db: AsyncSession = Depends(get_db)
     return {"message": "Dashboard deleted successfully", "id": dashboard_id}
 
 
-@router.patch("/dashboards/{dashboard_id}/restore")
+@router.patch("/dashboards/{dashboard_id}/restore", dependencies=[Depends(RoleChecker("admin", "manager"))])
 async def restore_dashboard(dashboard_id: int, db: AsyncSession = Depends(get_db)):
     result = await db.execute(
         select(PerformanceDashboard).where(PerformanceDashboard.id == dashboard_id)

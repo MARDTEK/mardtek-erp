@@ -590,3 +590,35 @@ class TestHrAuth:
             headers=_auth(token),
         )
         assert resp.status_code == 201
+
+    async def test_admin_can_delete_job_description(self, client: AsyncClient):
+        token = await self._register_and_login(client, "hradmin1", "admin")
+        create = await client.post(
+            "/api/v1/hr/job-descriptions",
+            json={"code": "JD-AUTH-ADM", "title": "Admin Delete", "department": "Eng", "responsibilities": "Test", "requirements": "None"},
+            headers=_auth(token),
+        )
+        assert create.status_code == 201, create.text
+        jd_id = create.json()["id"]
+
+        resp = await client.delete(
+            f"/api/v1/hr/job-descriptions/{jd_id}",
+            headers=_auth(token),
+        )
+        assert resp.status_code == 200
+
+    async def test_manager_can_delete_job_description(self, client: AsyncClient):
+        token = await self._register_and_login(client, "hrmgr1", "manager")
+        create = await client.post(
+            "/api/v1/hr/job-descriptions",
+            json={"code": "JD-AUTH-MGR", "title": "Manager Delete", "department": "Eng", "responsibilities": "Test", "requirements": "None"},
+            headers=_auth(token),
+        )
+        assert create.status_code == 201, create.text
+        jd_id = create.json()["id"]
+
+        resp = await client.delete(
+            f"/api/v1/hr/job-descriptions/{jd_id}",
+            headers=_auth(token),
+        )
+        assert resp.status_code == 200

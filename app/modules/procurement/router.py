@@ -86,7 +86,7 @@ async def get_purchase_request(pr_id: int, db: AsyncSession = Depends(get_db)):
     return pr
 
 
-@router.patch("/purchase-requests/{pr_id}", response_model=PurchaseRequestResponse)
+@router.patch("/purchase-requests/{pr_id}", response_model=PurchaseRequestResponse, dependencies=[Depends(RoleChecker("admin", "manager"))])
 async def update_purchase_request(pr_id: int, payload: PurchaseRequestUpdate, db: AsyncSession = Depends(get_db)):
     result = await db.execute(select(PurchaseRequest).where(PurchaseRequest.id == pr_id))
     pr = result.scalar_one_or_none()
@@ -98,7 +98,7 @@ async def update_purchase_request(pr_id: int, payload: PurchaseRequestUpdate, db
     return pr
 
 
-@router.post("/purchase-requests/{pr_id}/submit", response_model=PurchaseRequestResponse)
+@router.post("/purchase-requests/{pr_id}/submit", response_model=PurchaseRequestResponse, dependencies=[Depends(RoleChecker("admin", "manager"))])
 async def submit_purchase_request(pr_id: int, db: AsyncSession = Depends(get_db)):
     result = await db.execute(select(PurchaseRequest).where(PurchaseRequest.id == pr_id))
     pr = result.scalar_one_or_none()
@@ -111,7 +111,7 @@ async def submit_purchase_request(pr_id: int, db: AsyncSession = Depends(get_db)
     return pr
 
 
-@router.post("/purchase-requests/{pr_id}/approve", response_model=PurchaseRequestResponse)
+@router.post("/purchase-requests/{pr_id}/approve", response_model=PurchaseRequestResponse, dependencies=[Depends(RoleChecker("admin", "manager"))])
 async def approve_purchase_request(pr_id: int, db: AsyncSession = Depends(get_db)):
     result = await db.execute(select(PurchaseRequest).where(PurchaseRequest.id == pr_id))
     pr = result.scalar_one_or_none()
@@ -137,7 +137,7 @@ async def approve_purchase_request(pr_id: int, db: AsyncSession = Depends(get_db
     return pr
 
 
-@router.post("/purchase-requests/{pr_id}/reject", response_model=PurchaseRequestResponse)
+@router.post("/purchase-requests/{pr_id}/reject", response_model=PurchaseRequestResponse, dependencies=[Depends(RoleChecker("admin", "manager"))])
 async def reject_purchase_request(pr_id: int, db: AsyncSession = Depends(get_db)):
     result = await db.execute(select(PurchaseRequest).where(PurchaseRequest.id == pr_id))
     pr = result.scalar_one_or_none()
@@ -150,7 +150,7 @@ async def reject_purchase_request(pr_id: int, db: AsyncSession = Depends(get_db)
     return pr
 
 
-@router.post("/purchase-requests/{pr_id}/order", response_model=PurchaseRequestResponse)
+@router.post("/purchase-requests/{pr_id}/order", response_model=PurchaseRequestResponse, dependencies=[Depends(RoleChecker("admin", "manager"))])
 async def order_purchase_request(pr_id: int, db: AsyncSession = Depends(get_db)):
     result = await db.execute(select(PurchaseRequest).where(PurchaseRequest.id == pr_id))
     pr = result.scalar_one_or_none()
@@ -163,7 +163,7 @@ async def order_purchase_request(pr_id: int, db: AsyncSession = Depends(get_db))
     return pr
 
 
-@router.post("/purchase-requests/{pr_id}/cancel", response_model=PurchaseRequestResponse)
+@router.post("/purchase-requests/{pr_id}/cancel", response_model=PurchaseRequestResponse, dependencies=[Depends(RoleChecker("admin", "manager"))])
 async def cancel_purchase_request(pr_id: int, db: AsyncSession = Depends(get_db)):
     result = await db.execute(select(PurchaseRequest).where(PurchaseRequest.id == pr_id))
     pr = result.scalar_one_or_none()
@@ -176,7 +176,7 @@ async def cancel_purchase_request(pr_id: int, db: AsyncSession = Depends(get_db)
     return pr
 
 
-@router.post("/purchase-requests/{pr_id}/revert", response_model=PurchaseRequestResponse)
+@router.post("/purchase-requests/{pr_id}/revert", response_model=PurchaseRequestResponse, dependencies=[Depends(RoleChecker("admin", "manager"))])
 async def revert_purchase_request(pr_id: int, db: AsyncSession = Depends(get_db)):
     result = await db.execute(select(PurchaseRequest).where(PurchaseRequest.id == pr_id))
     pr = result.scalar_one_or_none()
@@ -204,7 +204,7 @@ async def list_suppliers(
     return list(result.scalars().all())
 
 
-@router.post("/suppliers", response_model=SupplierRegistrationResponse, status_code=status.HTTP_201_CREATED)
+@router.post("/suppliers", response_model=SupplierRegistrationResponse, status_code=status.HTTP_201_CREATED, dependencies=[Depends(RoleChecker("admin", "manager"))])
 async def create_supplier(payload: SupplierRegistrationCreate, db: AsyncSession = Depends(get_db)):
     supplier = SupplierRegistration(**payload.model_dump())
     db.add(supplier)
@@ -221,7 +221,7 @@ async def get_supplier(supplier_id: int, db: AsyncSession = Depends(get_db)):
     return supplier
 
 
-@router.patch("/suppliers/{supplier_id}", response_model=SupplierRegistrationResponse)
+@router.patch("/suppliers/{supplier_id}", response_model=SupplierRegistrationResponse, dependencies=[Depends(RoleChecker("admin", "manager"))])
 async def update_supplier(supplier_id: int, payload: SupplierRegistrationUpdate, db: AsyncSession = Depends(get_db)):
     result = await db.execute(select(SupplierRegistration).where(SupplierRegistration.id == supplier_id))
     supplier = result.scalar_one_or_none()
@@ -233,7 +233,7 @@ async def update_supplier(supplier_id: int, payload: SupplierRegistrationUpdate,
     return supplier
 
 
-@router.post("/suppliers/{supplier_id}/approve", response_model=SupplierRegistrationResponse)
+@router.post("/suppliers/{supplier_id}/approve", response_model=SupplierRegistrationResponse, dependencies=[Depends(RoleChecker("admin", "manager"))])
 async def approve_supplier(supplier_id: int, db: AsyncSession = Depends(get_db)):
     result = await db.execute(select(SupplierRegistration).where(SupplierRegistration.id == supplier_id))
     supplier = result.scalar_one_or_none()
@@ -246,7 +246,7 @@ async def approve_supplier(supplier_id: int, db: AsyncSession = Depends(get_db))
     return supplier
 
 
-@router.post("/suppliers/{supplier_id}/reject", response_model=SupplierRegistrationResponse)
+@router.post("/suppliers/{supplier_id}/reject", response_model=SupplierRegistrationResponse, dependencies=[Depends(RoleChecker("admin", "manager"))])
 async def reject_supplier(supplier_id: int, db: AsyncSession = Depends(get_db)):
     result = await db.execute(select(SupplierRegistration).where(SupplierRegistration.id == supplier_id))
     supplier = result.scalar_one_or_none()
@@ -277,7 +277,7 @@ async def list_evaluations(
     return list(result.scalars().all())
 
 
-@router.post("/evaluations", response_model=SupplierEvaluationResponse, status_code=status.HTTP_201_CREATED)
+@router.post("/evaluations", response_model=SupplierEvaluationResponse, status_code=status.HTTP_201_CREATED, dependencies=[Depends(RoleChecker("admin", "manager"))])
 async def create_evaluation(payload: SupplierEvaluationCreate, db: AsyncSession = Depends(get_db)):
     # Verify supplier exists
     sup_result = await db.execute(
@@ -307,7 +307,7 @@ async def get_evaluation(eval_id: int, db: AsyncSession = Depends(get_db)):
     return evaluation
 
 
-@router.post("/evaluations/{eval_id}/complete", response_model=SupplierEvaluationResponse)
+@router.post("/evaluations/{eval_id}/complete", response_model=SupplierEvaluationResponse, dependencies=[Depends(RoleChecker("admin", "manager"))])
 async def complete_evaluation(eval_id: int, db: AsyncSession = Depends(get_db)):
     result = await db.execute(select(SupplierEvaluation).where(SupplierEvaluation.id == eval_id))
     evaluation = result.scalar_one_or_none()
@@ -357,6 +357,7 @@ async def list_performance_reports(
     "/performance-reports",
     response_model=SupplierPerformanceReportResponse,
     status_code=status.HTTP_201_CREATED,
+    dependencies=[Depends(RoleChecker("admin", "manager"))],
 )
 async def create_performance_report(
     payload: SupplierPerformanceReportCreate,
@@ -403,7 +404,7 @@ async def list_receiving_reports(
     return list(result.scalars().all())
 
 
-@router.post("/receiving-reports", response_model=ReceivingReportResponse, status_code=status.HTTP_201_CREATED)
+@router.post("/receiving-reports", response_model=ReceivingReportResponse, status_code=status.HTTP_201_CREATED, dependencies=[Depends(RoleChecker("admin", "manager"))])
 async def create_receiving_report(payload: ReceivingReportCreate, db: AsyncSession = Depends(get_db)):
     if payload.purchase_request_id is not None:
         pr_result = await db.execute(
@@ -445,7 +446,7 @@ async def list_supplier_register(
     return list(result.scalars().all())
 
 
-@router.post("/register", response_model=SupplierRegisterResponse, status_code=status.HTTP_201_CREATED)
+@router.post("/register", response_model=SupplierRegisterResponse, status_code=status.HTTP_201_CREATED, dependencies=[Depends(RoleChecker("admin", "manager"))])
 async def create_register_entry(payload: SupplierRegisterCreate, db: AsyncSession = Depends(get_db)):
     # Verify supplier exists and is approved
     sup_result = await db.execute(
@@ -484,7 +485,7 @@ async def get_register_entry(entry_id: int, db: AsyncSession = Depends(get_db)):
     return entry
 
 
-@router.patch("/register/{entry_id}", response_model=SupplierRegisterResponse)
+@router.patch("/register/{entry_id}", response_model=SupplierRegisterResponse, dependencies=[Depends(RoleChecker("admin", "manager"))])
 async def update_register_entry(
     entry_id: int,
     payload: SupplierRegisterUpdate,

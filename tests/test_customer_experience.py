@@ -449,7 +449,7 @@ class TestCustomerExperienceAuth:
         assert resp.status_code == 401
 
     async def test_viewer_can_create(self, client: AsyncClient):
-        """Viewer role must be allowed to POST (create)."""
+        """Viewer role must be forbidden from POST (create)."""
         token = await self._register_and_login(client, "viewercx", "viewer")
 
         resp = await client.post(
@@ -461,5 +461,22 @@ class TestCustomerExperienceAuth:
             },
             headers=_auth(token),
         )
+        assert resp.status_code == 403, resp.text
+
+    async def test_admin_can_create_nps(self, client: AsyncClient):
+        token = await self._register_and_login(client, "admincx1", "admin")
+        resp = await client.post(
+            "/api/v1/customer-satisfaction/nps-surveys",
+            json={"code": "NPS-ADM-001", "customer_email": "admin@test.com", "score": 9},
+            headers=_auth(token),
+        )
         assert resp.status_code == 201, resp.text
-        assert resp.json()["customer_email"] == "viewer@test.com"
+
+    async def test_manager_can_create_nps(self, client: AsyncClient):
+        token = await self._register_and_login(client, "mgrcx1", "manager")
+        resp = await client.post(
+            "/api/v1/customer-satisfaction/nps-surveys",
+            json={"code": "NPS-MGR-001", "customer_email": "mgr@test.com", "score": 8},
+            headers=_auth(token),
+        )
+        assert resp.status_code == 201, resp.text

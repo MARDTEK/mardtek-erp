@@ -94,7 +94,7 @@ async def get_job_description(jd_id: int, db: AsyncSession = Depends(get_db)):
     return jd
 
 
-@router.patch("/job-descriptions/{jd_id}", response_model=JobDescriptionResponse)
+@router.patch("/job-descriptions/{jd_id}", response_model=JobDescriptionResponse, dependencies=[Depends(RoleChecker("admin", "manager"))])
 async def update_job_description(jd_id: int, payload: JobDescriptionUpdate, db: AsyncSession = Depends(get_db)):
     result = await db.execute(select(JobDescription).where(JobDescription.id == jd_id, JobDescription.is_deleted == False))
     jd = result.scalar_one_or_none()
@@ -169,7 +169,7 @@ async def get_personnel_request(pr_id: int, db: AsyncSession = Depends(get_db)):
     return pr
 
 
-@router.patch("/personnel-requests/{pr_id}", response_model=PersonnelRequestResponse)
+@router.patch("/personnel-requests/{pr_id}", response_model=PersonnelRequestResponse, dependencies=[Depends(RoleChecker("admin", "manager"))])
 async def update_personnel_request(pr_id: int, payload: PersonnelRequestUpdate, db: AsyncSession = Depends(get_db)):
     result = await db.execute(select(PersonnelRequest).where(PersonnelRequest.id == pr_id, PersonnelRequest.is_deleted == False))
     pr = result.scalar_one_or_none()
@@ -181,7 +181,7 @@ async def update_personnel_request(pr_id: int, payload: PersonnelRequestUpdate, 
     return pr
 
 
-@router.patch("/personnel-requests/{pr_id}/transition", response_model=PersonnelRequestResponse)
+@router.patch("/personnel-requests/{pr_id}/transition", response_model=PersonnelRequestResponse, dependencies=[Depends(RoleChecker("admin", "manager"))])
 async def transition_personnel_request_endpoint(
     pr_id: int,
     payload: PersonnelRequestTransition,
@@ -261,7 +261,7 @@ async def get_induction_checklist(ic_id: int, db: AsyncSession = Depends(get_db)
     return ic
 
 
-@router.patch("/induction-checklists/{ic_id}", response_model=InductionChecklistResponse)
+@router.patch("/induction-checklists/{ic_id}", response_model=InductionChecklistResponse, dependencies=[Depends(RoleChecker("admin", "manager"))])
 async def update_induction_checklist(ic_id: int, payload: InductionChecklistUpdate, db: AsyncSession = Depends(get_db)):
     result = await db.execute(select(InductionChecklist).where(InductionChecklist.id == ic_id, InductionChecklist.is_deleted == False))
     ic = result.scalar_one_or_none()
@@ -339,7 +339,7 @@ async def get_development_plan(dp_id: int, db: AsyncSession = Depends(get_db)):
     return plan
 
 
-@router.patch("/development-plans/{dp_id}", response_model=IndividualDevelopmentPlanResponse)
+@router.patch("/development-plans/{dp_id}", response_model=IndividualDevelopmentPlanResponse, dependencies=[Depends(RoleChecker("admin", "manager"))])
 async def update_development_plan(dp_id: int, payload: IndividualDevelopmentPlanUpdate, db: AsyncSession = Depends(get_db)):
     result = await db.execute(select(IndividualDevelopmentPlan).where(IndividualDevelopmentPlan.id == dp_id, IndividualDevelopmentPlan.is_deleted == False))
     plan = result.scalar_one_or_none()
@@ -422,7 +422,7 @@ async def get_evaluation(eval_id: int, db: AsyncSession = Depends(get_db)):
     return evaluation
 
 
-@router.patch("/evaluations/{eval_id}", response_model=PerformanceEvaluationResponse)
+@router.patch("/evaluations/{eval_id}", response_model=PerformanceEvaluationResponse, dependencies=[Depends(RoleChecker("admin", "manager"))])
 async def update_evaluation(eval_id: int, payload: PerformanceEvaluationUpdate, db: AsyncSession = Depends(get_db)):
     result = await db.execute(select(PerformanceEvaluation).where(PerformanceEvaluation.id == eval_id, PerformanceEvaluation.is_deleted == False))
     evaluation = result.scalar_one_or_none()
@@ -449,7 +449,7 @@ async def update_evaluation(eval_id: int, payload: PerformanceEvaluationUpdate, 
     return evaluation
 
 
-@router.patch("/evaluations/{eval_id}/transition", response_model=PerformanceEvaluationResponse)
+@router.patch("/evaluations/{eval_id}/transition", response_model=PerformanceEvaluationResponse, dependencies=[Depends(RoleChecker("admin", "manager"))])
 async def transition_evaluation_endpoint(
     eval_id: int,
     payload: PerformanceEvaluationTransition,
@@ -545,7 +545,7 @@ async def get_labor_incident(incident_id: int, db: AsyncSession = Depends(get_db
     return incident
 
 
-@router.patch("/labor-incidents/{incident_id}", response_model=LaborIncidentResponse)
+@router.patch("/labor-incidents/{incident_id}", response_model=LaborIncidentResponse, dependencies=[Depends(RoleChecker("admin", "manager"))])
 async def update_labor_incident(incident_id: int, payload: LaborIncidentUpdate, db: AsyncSession = Depends(get_db)):
     result = await db.execute(select(LaborIncident).where(LaborIncident.id == incident_id, LaborIncident.is_deleted == False))
     incident = result.scalar_one_or_none()
@@ -606,7 +606,7 @@ async def list_staff(
     return list(result.scalars().all())
 
 
-@router.post("/staff", response_model=StaffRegisterResponse, status_code=201)
+@router.post("/staff", response_model=StaffRegisterResponse, status_code=201, dependencies=[Depends(RoleChecker("admin", "manager"))])
 async def create_staff_entry(payload: StaffRegisterCreate, db: AsyncSession = Depends(get_db)):
     entry = StaffRegister(**payload.model_dump())
     db.add(entry)
@@ -638,7 +638,7 @@ async def get_staff_entry(staff_id: int, db: AsyncSession = Depends(get_db)):
     return entry
 
 
-@router.patch("/staff/{staff_id}", response_model=StaffRegisterResponse)
+@router.patch("/staff/{staff_id}", response_model=StaffRegisterResponse, dependencies=[Depends(RoleChecker("admin", "manager"))])
 async def update_staff_entry(staff_id: int, payload: StaffRegisterUpdate, db: AsyncSession = Depends(get_db)):
     result = await db.execute(select(StaffRegister).where(StaffRegister.id == staff_id, StaffRegister.is_deleted == False))
     entry = result.scalar_one_or_none()

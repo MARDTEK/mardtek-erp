@@ -563,7 +563,8 @@ class TestTechDevelopmentAuth:
 
     async def test_viewer_cannot_delete(self, client: AsyncClient):
         """Viewer role must be forbidden from DELETE on roadmaps."""
-        token = await self._register_and_login(client, "viewerdev", "viewer")
+        viewer_token = await self._register_and_login(client, "viewerdev", "viewer")
+        admin_token = await self._register_and_login(client, "adminfordev", "admin")
 
         create = await client.post(
             "/api/v1/development/roadmaps",
@@ -575,20 +576,20 @@ class TestTechDevelopmentAuth:
                 "vision": "Test vision",
                 "strategic_goals": "Test goals",
             },
-            headers=_auth(token),
+            headers=_auth(admin_token),
         )
         assert create.status_code == 201, create.text
         rm_id = create.json()["id"]
 
         resp = await client.delete(
             f"/api/v1/development/roadmaps/{rm_id}",
-            headers=_auth(token),
+            headers=_auth(viewer_token),
         )
         assert resp.status_code == 403
         assert "not allowed" in resp.text
 
     async def test_viewer_can_create(self, client: AsyncClient):
-        """Viewer role must be allowed to POST (create)."""
+        """Viewer role must be forbidden from POST (create)."""
         token = await self._register_and_login(client, "viewerdev2", "viewer")
 
         resp = await client.post(
@@ -603,5 +604,46 @@ class TestTechDevelopmentAuth:
             },
             headers=_auth(token),
         )
+        assert resp.status_code == 403, resp.text
+
+    async def test_admin_can_create_roadmap(self, client: AsyncClient):
+        token = await self._register_and_login(client, "admindev1", "admin")
+        resp = await client.post(
+            "/api/v1/development/roadmaps",
+            json={
+                "code": "PLN-P4-050", "title": "Admin Roadmap", "product_line": "SAAS",
+                "year": 2026, "vision": "Admin test", "strategic_goals": "Admin goals",
+            },
+            headers=_auth(token),
+        )
         assert resp.status_code == 201, resp.text
-        assert resp.json()["title"] == "Viewer Roadmap"
+
+    async def test_manager_can_create_roadmap(self, client: AsyncClient):
+        token = await self._register_and_login(client, "mgrdev1", "manager")
+        resp = await client.post(
+            "/api/v1/development/roadmaps",
+            json={
+                "code": "PLN-P4-051", "title": "Manager Roadmap", "product_line": "SAAS",
+                "year": 2026, "vision": "Manager test", "strategic_goals": "Manager goals",
+            },
+            headers=_auth(token),
+        )
+        assert resp.status_code == 201, resp.text
+
+    async def test_admin_can_delete_roadmap(self, client: AsyncClient):
+        token = await self._register_and_login(client, "admindev2", "admin")
+        create = await client.post(
+            "/api/v1/development/roadmaps",
+            json={
+                "code": "PLN-P4-052", "title": "Delete Test", "product_line": "SAAS",
+                "year": 2026, "vision": "Test", "strategic_goals": "Test",
+            },
+            headers=_auth(token),
+        )
+        assert create.status_code == 201, create.text
+        rm_id = create.json()["id"]
+        resp = await client.delete(
+            f"/api/v1/development/roadmaps/{rm_id}",
+            headers=_auth(token),
+        )
+        assert resp.status_code == 200

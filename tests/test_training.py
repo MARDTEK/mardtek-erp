@@ -635,19 +635,20 @@ class TestTrainingAuth:
         assert resp.status_code == 401
 
     async def test_viewer_cannot_delete_need(self, client: AsyncClient):
-        token = await self._register_and_login(client, "trnviewer", "viewer")
+        viewer_token = await self._register_and_login(client, "trnviewer", "viewer")
+        admin_token = await self._register_and_login(client, "admin4trn", "admin")
 
         create = await client.post(
             "/api/v1/training/needs",
             json={"code": "TN-AUTH01", "employee_name": "Viewer User", "role": "Dev", "skills_gap": "Testing auth"},
-            headers=_auth(token),
+            headers=_auth(admin_token),
         )
         assert create.status_code == 201, create.text
         need_id = create.json()["id"]
 
         resp = await client.delete(
             f"/api/v1/training/needs/{need_id}",
-            headers=_auth(token),
+            headers=_auth(viewer_token),
         )
         assert resp.status_code == 403
 
@@ -658,4 +659,37 @@ class TestTrainingAuth:
             json={"code": "TN-AUTH02", "employee_name": "Viewer Creates", "role": "Tester", "skills_gap": "Python"},
             headers=_auth(token),
         )
-        assert resp.status_code == 201
+        assert resp.status_code == 403
+
+    async def test_admin_can_create_need(self, client: AsyncClient):
+        token = await self._register_and_login(client, "admintrn1", "admin")
+        resp = await client.post(
+            "/api/v1/training/needs",
+            json={"code": "TN-ADM-001", "employee_name": "Admin User", "role": "Dev", "skills_gap": "Admin test"},
+            headers=_auth(token),
+        )
+        assert resp.status_code == 201, resp.text
+
+    async def test_manager_can_create_need(self, client: AsyncClient):
+        token = await self._register_and_login(client, "mgrtrn1", "manager")
+        resp = await client.post(
+            "/api/v1/training/needs",
+            json={"code": "TN-MGR-001", "employee_name": "Manager User", "role": "Dev", "skills_gap": "Manager test"},
+            headers=_auth(token),
+        )
+        assert resp.status_code == 201, resp.text
+
+    async def test_admin_can_delete_need(self, client: AsyncClient):
+        token = await self._register_and_login(client, "admintrn2", "admin")
+        create = await client.post(
+            "/api/v1/training/needs",
+            json={"code": "TN-DEL-001", "employee_name": "Delete User", "role": "Dev", "skills_gap": "Test"},
+            headers=_auth(token),
+        )
+        assert create.status_code == 201, create.text
+        need_id = create.json()["id"]
+        resp = await client.delete(
+            f"/api/v1/training/needs/{need_id}",
+            headers=_auth(token),
+        )
+        assert resp.status_code == 200

@@ -400,7 +400,7 @@ class TestPmoProjectsAuth:
             json=TestProjects.CREATE_PAYLOAD,
             headers=_auth(token),
         )
-        assert resp.status_code == 201
+        assert resp.status_code == 403
 
     async def test_viewer_cannot_delete(self, client: AsyncClient):
         """No DELETE endpoints exist in PMO projects; verify 405."""
@@ -417,3 +417,35 @@ class TestPmoProjectsAuth:
             headers=_auth(token),
         )
         assert resp.status_code == 405
+
+    async def test_admin_can_create_project(self, client: AsyncClient):
+        await client.post("/auth/register", json={
+            "username": "pmo_admin", "email": "pmo_admin@test.com",
+            "password": "password123", "role": "admin",
+        })
+        login = await client.post("/auth/login", json={
+            "username": "pmo_admin", "password": "password123",
+        })
+        token = login.json()["access_token"]
+        resp = await client.post(
+            "/api/v1/projects/projects",
+            json=TestProjects.CREATE_PAYLOAD,
+            headers=_auth(token),
+        )
+        assert resp.status_code == 201, resp.text
+
+    async def test_manager_can_create_project(self, client: AsyncClient):
+        await client.post("/auth/register", json={
+            "username": "pmo_mgr", "email": "pmo_mgr@test.com",
+            "password": "password123", "role": "manager",
+        })
+        login = await client.post("/auth/login", json={
+            "username": "pmo_mgr", "password": "password123",
+        })
+        token = login.json()["access_token"]
+        resp = await client.post(
+            "/api/v1/projects/projects",
+            json=TestProjects.CREATE_PAYLOAD,
+            headers=_auth(token),
+        )
+        assert resp.status_code == 201, resp.text

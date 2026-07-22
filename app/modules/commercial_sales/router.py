@@ -107,7 +107,7 @@ async def update_lead(lead_id: int, payload: LeadUpdate, db: AsyncSession = Depe
     return lead
 
 
-@router.post("/leads/{lead_id}/qualify", response_model=LeadResponse)
+@router.post("/leads/{lead_id}/qualify", response_model=LeadResponse, dependencies=[Depends(RoleChecker("admin", "manager"))])
 async def qualify_lead_endpoint(lead_id: int, payload: LeadQualify, db: AsyncSession = Depends(get_db)):
     lead = await qualify_lead(db, lead_id, payload.icp_score)
     if not lead:
@@ -115,7 +115,7 @@ async def qualify_lead_endpoint(lead_id: int, payload: LeadQualify, db: AsyncSes
     return lead
 
 
-@router.post("/leads/{lead_id}/win", response_model=LeadResponse)
+@router.post("/leads/{lead_id}/win", response_model=LeadResponse, dependencies=[Depends(RoleChecker("admin", "manager"))])
 async def win_lead_endpoint(
     lead_id: int,
     proposal_id: int = Query(...),
@@ -195,7 +195,7 @@ async def create_proposal(lead_id: int, payload: ProposalCreate, db: AsyncSessio
     return proposal
 
 
-@router.post("/proposals/{proposal_id}/accept", response_model=ProposalResponse)
+@router.post("/proposals/{proposal_id}/accept", response_model=ProposalResponse, dependencies=[Depends(RoleChecker("admin", "manager"))])
 async def accept_proposal_endpoint(proposal_id: int, db: AsyncSession = Depends(get_db)):
     proposal = await accept_proposal(db, proposal_id)
     if not proposal:
@@ -237,7 +237,7 @@ async def get_contract(contract_id: int, db: AsyncSession = Depends(get_db)):
 
 # ─── SaaS Subscriptions ──────────────────────────────────────────────────
 
-@router.post("/contracts/{contract_id}/subscription/activate", response_model=SubscriptionResponse)
+@router.post("/contracts/{contract_id}/subscription/activate", response_model=SubscriptionResponse, dependencies=[Depends(RoleChecker("admin", "manager"))])
 async def activate_subscription_endpoint(
     contract_id: int,
     payload: SubscriptionActivate,
@@ -268,7 +268,7 @@ async def get_subscription(subscription_id: int, db: AsyncSession = Depends(get_
     return sub
 
 
-@router.post("/subscriptions/{subscription_id}/churn", response_model=SubscriptionResponse)
+@router.post("/subscriptions/{subscription_id}/churn", response_model=SubscriptionResponse, dependencies=[Depends(RoleChecker("admin", "manager"))])
 async def churn_subscription_endpoint(
     subscription_id: int,
     payload: SubscriptionChurn,
@@ -287,7 +287,7 @@ async def churn_subscription_endpoint(
 
 # ─── Onboarding ──────────────────────────────────────────────────────────
 
-@router.post("/contracts/{contract_id}/onboarding", response_model=OnboardingResponse, status_code=201)
+@router.post("/contracts/{contract_id}/onboarding", response_model=OnboardingResponse, status_code=201, dependencies=[Depends(RoleChecker("admin", "manager"))])
 async def start_onboarding_endpoint(
     contract_id: int,
     payload: OnboardingStart,
@@ -308,7 +308,7 @@ async def get_onboarding(onboarding_id: int, db: AsyncSession = Depends(get_db))
     return onboarding
 
 
-@router.post("/onboarding/{onboarding_id}/step/{step_index}", response_model=OnboardingResponse)
+@router.post("/onboarding/{onboarding_id}/step/{step_index}", response_model=OnboardingResponse, dependencies=[Depends(RoleChecker("admin", "manager"))])
 async def complete_step(onboarding_id: int, step_index: int, db: AsyncSession = Depends(get_db)):
     onboarding = await complete_onboarding_step(db, onboarding_id, step_index)
     if not onboarding:
@@ -318,7 +318,7 @@ async def complete_step(onboarding_id: int, step_index: int, db: AsyncSession = 
 
 # ─── Account Plans ───────────────────────────────────────────────────────
 
-@router.post("/contracts/{contract_id}/account-plans", response_model=AccountPlanResponse, status_code=201)
+@router.post("/contracts/{contract_id}/account-plans", response_model=AccountPlanResponse, status_code=201, dependencies=[Depends(RoleChecker("admin", "manager"))])
 async def create_account_plan(contract_id: int, payload: AccountPlanCreate, db: AsyncSession = Depends(get_db)):
     contract_result = await db.execute(select(Contract).where(Contract.id == contract_id))
     if not contract_result.scalar_one_or_none():
@@ -348,6 +348,7 @@ async def list_account_plans(
     "/subscriptions/{subscription_id}/retention",
     response_model=RetentionActionResponse,
     status_code=201,
+    dependencies=[Depends(RoleChecker("admin", "manager"))],
 )
 async def create_retention_action(
     subscription_id: int,

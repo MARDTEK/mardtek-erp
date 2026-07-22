@@ -68,7 +68,7 @@ async def list_requests(
     return list(result.scalars().all())
 
 
-@router.post("/requests", response_model=InfrastructureRequestResponse, status_code=status.HTTP_201_CREATED)
+@router.post("/requests", response_model=InfrastructureRequestResponse, status_code=status.HTTP_201_CREATED, dependencies=[Depends(RoleChecker("admin", "manager"))])
 async def create_request(payload: InfrastructureRequestCreate, db: AsyncSession = Depends(get_db)):
     req = InfrastructureRequest(**payload.model_dump())
     db.add(req)
@@ -85,7 +85,7 @@ async def get_request(request_id: int, db: AsyncSession = Depends(get_db)):
     return req
 
 
-@router.patch("/requests/{request_id}", response_model=InfrastructureRequestResponse)
+@router.patch("/requests/{request_id}", response_model=InfrastructureRequestResponse, dependencies=[Depends(RoleChecker("admin", "manager"))])
 async def update_request(
     request_id: int,
     payload: InfrastructureRequestUpdate,
@@ -119,7 +119,7 @@ async def list_sla_agreements(
     return list(result.scalars().all())
 
 
-@router.post("/sla-agreements", response_model=SlaAgreementResponse, status_code=status.HTTP_201_CREATED)
+@router.post("/sla-agreements", response_model=SlaAgreementResponse, status_code=status.HTTP_201_CREATED, dependencies=[Depends(RoleChecker("admin", "manager"))])
 async def create_sla_agreement(payload: SlaAgreementCreate, db: AsyncSession = Depends(get_db)):
     sla = SlaAgreement(**payload.model_dump())
     db.add(sla)
@@ -136,7 +136,7 @@ async def get_sla_agreement(sla_id: int, db: AsyncSession = Depends(get_db)):
     return sla
 
 
-@router.patch("/sla-agreements/{sla_id}", response_model=SlaAgreementResponse)
+@router.patch("/sla-agreements/{sla_id}", response_model=SlaAgreementResponse, dependencies=[Depends(RoleChecker("admin", "manager"))])
 async def update_sla_agreement(
     sla_id: int,
     payload: SlaAgreementUpdate,
@@ -180,7 +180,7 @@ async def open_incidents_by_severity(
     return await get_open_incidents_by_severity(db)
 
 
-@router.post("/incidents", response_model=IncidentReportResponse, status_code=status.HTTP_201_CREATED)
+@router.post("/incidents", response_model=IncidentReportResponse, status_code=status.HTTP_201_CREATED, dependencies=[Depends(RoleChecker("admin", "manager"))])
 async def create_incident(payload: IncidentReportCreate, db: AsyncSession = Depends(get_db)):
     inc = IncidentReport(**payload.model_dump())
     db.add(inc)
@@ -214,7 +214,7 @@ async def get_incident(incident_id: int, db: AsyncSession = Depends(get_db)):
     return inc
 
 
-@router.patch("/incidents/{incident_id}", response_model=IncidentReportResponse)
+@router.patch("/incidents/{incident_id}", response_model=IncidentReportResponse, dependencies=[Depends(RoleChecker("admin", "manager"))])
 async def update_incident(
     incident_id: int,
     payload: IncidentReportUpdate,
@@ -256,6 +256,7 @@ async def list_availability_reports(
     "/availability-reports",
     response_model=AvailabilityReportResponse,
     status_code=status.HTTP_201_CREATED,
+    dependencies=[Depends(RoleChecker("admin", "manager"))],
 )
 async def create_availability_report(payload: AvailabilityReportCreate, db: AsyncSession = Depends(get_db)):
     report = AvailabilityReport(**payload.model_dump())
@@ -310,6 +311,7 @@ async def list_continuity_plans(
     "/continuity-plans",
     response_model=BusinessContinuityPlanResponse,
     status_code=status.HTTP_201_CREATED,
+    dependencies=[Depends(RoleChecker("admin", "manager"))],
 )
 async def create_continuity_plan(payload: BusinessContinuityPlanCreate, db: AsyncSession = Depends(get_db)):
     plan = BusinessContinuityPlan(**payload.model_dump())
@@ -327,7 +329,7 @@ async def get_continuity_plan(plan_id: int, db: AsyncSession = Depends(get_db)):
     return plan
 
 
-@router.patch("/continuity-plans/{plan_id}", response_model=BusinessContinuityPlanResponse)
+@router.patch("/continuity-plans/{plan_id}", response_model=BusinessContinuityPlanResponse, dependencies=[Depends(RoleChecker("admin", "manager"))])
 async def update_continuity_plan(
     plan_id: int,
     payload: BusinessContinuityPlanUpdate,
@@ -365,6 +367,7 @@ async def list_security_incidents(
     "/security-incidents",
     response_model=SecurityIncidentResponse,
     status_code=status.HTTP_201_CREATED,
+    dependencies=[Depends(RoleChecker("admin", "manager"))],
 )
 async def create_security_incident(payload: SecurityIncidentCreate, db: AsyncSession = Depends(get_db)):
     inc = SecurityIncident(**payload.model_dump())
@@ -382,7 +385,7 @@ async def get_security_incident(incident_id: int, db: AsyncSession = Depends(get
     return inc
 
 
-@router.patch("/security-incidents/{incident_id}", response_model=SecurityIncidentResponse)
+@router.patch("/security-incidents/{incident_id}", response_model=SecurityIncidentResponse, dependencies=[Depends(RoleChecker("admin", "manager"))])
 async def update_security_incident(
     incident_id: int,
     payload: SecurityIncidentUpdate,
@@ -423,6 +426,7 @@ async def list_maintenance_records(
     "/maintenance-records",
     response_model=MaintenanceRecordResponse,
     status_code=status.HTTP_201_CREATED,
+    dependencies=[Depends(RoleChecker("admin", "manager"))],
 )
 async def create_maintenance_record(payload: MaintenanceRecordCreate, db: AsyncSession = Depends(get_db)):
     record = MaintenanceRecord(**payload.model_dump())
@@ -440,7 +444,7 @@ async def get_maintenance_record(record_id: int, db: AsyncSession = Depends(get_
     return record
 
 
-@router.patch("/maintenance-records/{record_id}", response_model=MaintenanceRecordResponse)
+@router.patch("/maintenance-records/{record_id}", response_model=MaintenanceRecordResponse, dependencies=[Depends(RoleChecker("admin", "manager"))])
 async def update_maintenance_record(
     record_id: int,
     payload: MaintenanceRecordUpdate,
@@ -459,6 +463,7 @@ async def update_maintenance_record(
 @router.patch(
     "/maintenance-records/{record_id}/transition",
     response_model=MaintenanceRecordResponse,
+    dependencies=[Depends(RoleChecker("admin", "manager"))],
 )
 async def transition_maintenance_record(
     record_id: int,

@@ -80,7 +80,7 @@ async def list_roadmaps(
     return list(result.scalars().all())
 
 
-@router.post("/roadmaps", response_model=ProductRoadmapResponse, status_code=status.HTTP_201_CREATED)
+@router.post("/roadmaps", response_model=ProductRoadmapResponse, status_code=status.HTTP_201_CREATED, dependencies=[Depends(RoleChecker("admin", "manager"))])
 async def create_roadmap(payload: ProductRoadmapCreate, db: AsyncSession = Depends(get_db)):
     roadmap = ProductRoadmap(**payload.model_dump())
     db.add(roadmap)
@@ -97,7 +97,7 @@ async def get_roadmap(roadmap_id: int, db: AsyncSession = Depends(get_db)):
     return roadmap
 
 
-@router.patch("/roadmaps/{roadmap_id}", response_model=ProductRoadmapResponse)
+@router.patch("/roadmaps/{roadmap_id}", response_model=ProductRoadmapResponse, dependencies=[Depends(RoleChecker("admin", "manager"))])
 async def update_roadmap(roadmap_id: int, payload: ProductRoadmapUpdate, db: AsyncSession = Depends(get_db)):
     result = await db.execute(select(ProductRoadmap).where(ProductRoadmap.id == roadmap_id, ProductRoadmap.is_deleted == False))
     roadmap = result.scalar_one_or_none()
@@ -155,7 +155,7 @@ async def list_releases(
     return list(result.scalars().all())
 
 
-@router.post("/releases", response_model=ReleasePlanResponse, status_code=status.HTTP_201_CREATED)
+@router.post("/releases", response_model=ReleasePlanResponse, status_code=status.HTTP_201_CREATED, dependencies=[Depends(RoleChecker("admin", "manager"))])
 async def create_release(payload: ReleasePlanCreate, db: AsyncSession = Depends(get_db)):
     release = ReleasePlan(**payload.model_dump())
     db.add(release)
@@ -172,7 +172,7 @@ async def get_release(release_id: int, db: AsyncSession = Depends(get_db)):
     return release
 
 
-@router.patch("/releases/{release_id}", response_model=ReleasePlanResponse)
+@router.patch("/releases/{release_id}", response_model=ReleasePlanResponse, dependencies=[Depends(RoleChecker("admin", "manager"))])
 async def update_release(release_id: int, payload: ReleasePlanUpdate, db: AsyncSession = Depends(get_db)):
     result = await db.execute(select(ReleasePlan).where(ReleasePlan.id == release_id, ReleasePlan.is_deleted == False))
     release = result.scalar_one_or_none()
@@ -232,7 +232,7 @@ async def list_specifications(
     return list(result.scalars().all())
 
 
-@router.post("/specifications", response_model=TechnicalSpecificationResponse, status_code=status.HTTP_201_CREATED)
+@router.post("/specifications", response_model=TechnicalSpecificationResponse, status_code=status.HTTP_201_CREATED, dependencies=[Depends(RoleChecker("admin", "manager"))])
 async def create_specification(payload: TechnicalSpecificationCreate, db: AsyncSession = Depends(get_db)):
     spec = TechnicalSpecification(**payload.model_dump())
     db.add(spec)
@@ -249,7 +249,7 @@ async def get_specification(spec_id: int, db: AsyncSession = Depends(get_db)):
     return spec
 
 
-@router.patch("/specifications/{spec_id}", response_model=TechnicalSpecificationResponse)
+@router.patch("/specifications/{spec_id}", response_model=TechnicalSpecificationResponse, dependencies=[Depends(RoleChecker("admin", "manager"))])
 async def update_specification(
     spec_id: int,
     payload: TechnicalSpecificationUpdate,
@@ -307,7 +307,7 @@ async def list_risk_matrices(
     return list(result.scalars().all())
 
 
-@router.post("/risk-matrices", response_model=RiskMatrixResponse, status_code=status.HTTP_201_CREATED)
+@router.post("/risk-matrices", response_model=RiskMatrixResponse, status_code=status.HTTP_201_CREATED, dependencies=[Depends(RoleChecker("admin", "manager"))])
 async def create_risk_matrix(payload: RiskMatrixCreate, db: AsyncSession = Depends(get_db)):
     matrix = RiskMatrix(**payload.model_dump())
     db.add(matrix)
@@ -324,7 +324,7 @@ async def get_risk_matrix(matrix_id: int, db: AsyncSession = Depends(get_db)):
     return matrix
 
 
-@router.patch("/risk-matrices/{matrix_id}", response_model=RiskMatrixResponse)
+@router.patch("/risk-matrices/{matrix_id}", response_model=RiskMatrixResponse, dependencies=[Depends(RoleChecker("admin", "manager"))])
 async def update_risk_matrix(
     matrix_id: int,
     payload: RiskMatrixUpdate,
@@ -388,7 +388,7 @@ async def list_qa_reports(
     return list(result.scalars().all())
 
 
-@router.post("/qa-reports", response_model=QATestReportResponse, status_code=status.HTTP_201_CREATED)
+@router.post("/qa-reports", response_model=QATestReportResponse, status_code=status.HTTP_201_CREATED, dependencies=[Depends(RoleChecker("admin", "manager"))])
 async def create_qa_report(payload: QATestReportCreate, db: AsyncSession = Depends(get_db)):
     report = QATestReport(**payload.model_dump())
     db.add(report)
@@ -423,7 +423,7 @@ async def get_qa_report(report_id: int, db: AsyncSession = Depends(get_db)):
     return report
 
 
-@router.patch("/qa-reports/{report_id}", response_model=QATestReportResponse)
+@router.patch("/qa-reports/{report_id}", response_model=QATestReportResponse, dependencies=[Depends(RoleChecker("admin", "manager"))])
 async def update_qa_report(
     report_id: int,
     payload: QATestReportUpdate,
@@ -487,7 +487,7 @@ async def list_deployments(
     return list(result.scalars().all())
 
 
-@router.post("/deployments", response_model=DeploymentRecordResponse, status_code=status.HTTP_201_CREATED)
+@router.post("/deployments", response_model=DeploymentRecordResponse, status_code=status.HTTP_201_CREATED, dependencies=[Depends(RoleChecker("admin", "manager"))])
 async def create_deployment(payload: DeploymentRecordCreate, db: AsyncSession = Depends(get_db)):
     record = await create_deployment_record(
         db=db,
@@ -575,7 +575,7 @@ async def list_uat_signoffs(
     return list(result.scalars().all())
 
 
-@router.post("/uat-signoffs", response_model=UATSignOffResponse, status_code=status.HTTP_201_CREATED)
+@router.post("/uat-signoffs", response_model=UATSignOffResponse, status_code=status.HTTP_201_CREATED, dependencies=[Depends(RoleChecker("admin", "manager"))])
 async def create_uat_signoff(payload: UATSignOffCreate, db: AsyncSession = Depends(get_db)):
     signoff = UATSignOff(**payload.model_dump())
     db.add(signoff)
@@ -592,7 +592,7 @@ async def get_uat_signoff(signoff_id: int, db: AsyncSession = Depends(get_db)):
     return signoff
 
 
-@router.patch("/uat-signoffs/{signoff_id}", response_model=UATSignOffResponse)
+@router.patch("/uat-signoffs/{signoff_id}", response_model=UATSignOffResponse, dependencies=[Depends(RoleChecker("admin", "manager"))])
 async def update_uat_signoff(
     signoff_id: int,
     payload: UATSignOffUpdate,
@@ -653,7 +653,7 @@ async def list_sunsets(
     return list(result.scalars().all())
 
 
-@router.post("/sunsets", response_model=SolutionSunsetResponse, status_code=status.HTTP_201_CREATED)
+@router.post("/sunsets", response_model=SolutionSunsetResponse, status_code=status.HTTP_201_CREATED, dependencies=[Depends(RoleChecker("admin", "manager"))])
 async def create_sunset(payload: SolutionSunsetCreate, db: AsyncSession = Depends(get_db)):
     sunset = SolutionSunset(**payload.model_dump())
     db.add(sunset)
@@ -670,7 +670,7 @@ async def get_sunset(sunset_id: int, db: AsyncSession = Depends(get_db)):
     return sunset
 
 
-@router.patch("/sunsets/{sunset_id}", response_model=SolutionSunsetResponse)
+@router.patch("/sunsets/{sunset_id}", response_model=SolutionSunsetResponse, dependencies=[Depends(RoleChecker("admin", "manager"))])
 async def update_sunset(
     sunset_id: int,
     payload: SolutionSunsetUpdate,

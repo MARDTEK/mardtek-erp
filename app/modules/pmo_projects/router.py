@@ -78,7 +78,7 @@ async def list_projects(
     return list(result.scalars().all())
 
 
-@router.post("/projects", response_model=ProjectResponse, status_code=status.HTTP_201_CREATED)
+@router.post("/projects", response_model=ProjectResponse, status_code=status.HTTP_201_CREATED, dependencies=[Depends(RoleChecker("admin", "manager"))])
 async def create_project(payload: ProjectCreate, db: AsyncSession = Depends(get_db)):
     project = Project(**payload.model_dump())
     db.add(project)
@@ -95,7 +95,7 @@ async def get_project(project_id: int, db: AsyncSession = Depends(get_db)):
     return project
 
 
-@router.patch("/projects/{project_id}", response_model=ProjectResponse)
+@router.patch("/projects/{project_id}", response_model=ProjectResponse, dependencies=[Depends(RoleChecker("admin", "manager"))])
 async def update_project(project_id: int, payload: ProjectUpdate, db: AsyncSession = Depends(get_db)):
     result = await db.execute(select(Project).where(Project.id == project_id))
     project = result.scalar_one_or_none()
@@ -137,6 +137,7 @@ async def list_execution_plans(
     "/projects/{project_id}/execution-plans",
     response_model=ExecutionPlanResponse,
     status_code=status.HTTP_201_CREATED,
+    dependencies=[Depends(RoleChecker("admin", "manager"))],
 )
 async def create_execution_plan(project_id: int, payload: ExecutionPlanCreate, db: AsyncSession = Depends(get_db)):
     project_result = await db.execute(select(Project).where(Project.id == project_id))
@@ -157,7 +158,7 @@ async def get_execution_plan(plan_id: int, db: AsyncSession = Depends(get_db)):
     return plan
 
 
-@router.patch("/execution-plans/{plan_id}", response_model=ExecutionPlanResponse)
+@router.patch("/execution-plans/{plan_id}", response_model=ExecutionPlanResponse, dependencies=[Depends(RoleChecker("admin", "manager"))])
 async def update_execution_plan(plan_id: int, payload: ExecutionPlanUpdate, db: AsyncSession = Depends(get_db)):
     result = await db.execute(select(ProjectExecutionPlan).where(ProjectExecutionPlan.id == plan_id))
     plan = result.scalar_one_or_none()
@@ -189,6 +190,7 @@ async def list_change_requests(
     "/projects/{project_id}/change-requests",
     response_model=ChangeRequestResponse,
     status_code=status.HTTP_201_CREATED,
+    dependencies=[Depends(RoleChecker("admin", "manager"))],
 )
 async def create_change_request(project_id: int, payload: ChangeRequestCreate, db: AsyncSession = Depends(get_db)):
     project_result = await db.execute(select(Project).where(Project.id == project_id))
@@ -209,7 +211,7 @@ async def get_change_request(cr_id: int, db: AsyncSession = Depends(get_db)):
     return cr
 
 
-@router.patch("/change-requests/{cr_id}", response_model=ChangeRequestResponse)
+@router.patch("/change-requests/{cr_id}", response_model=ChangeRequestResponse, dependencies=[Depends(RoleChecker("admin", "manager"))])
 async def update_change_request(cr_id: int, payload: ChangeRequestUpdate, db: AsyncSession = Depends(get_db)):
     result = await db.execute(select(ChangeRequest).where(ChangeRequest.id == cr_id))
     cr = result.scalar_one_or_none()
@@ -221,7 +223,7 @@ async def update_change_request(cr_id: int, payload: ChangeRequestUpdate, db: As
     return cr
 
 
-@router.post("/change-requests/{cr_id}/approve", response_model=ChangeRequestResponse)
+@router.post("/change-requests/{cr_id}/approve", response_model=ChangeRequestResponse, dependencies=[Depends(RoleChecker("admin", "manager"))])
 async def approve_change_request(
     cr_id: int,
     payload: ChangeRequestApprove,
@@ -277,6 +279,7 @@ async def list_weekly_reports(
     "/projects/{project_id}/weekly-reports",
     response_model=WeeklyReportResponse,
     status_code=status.HTTP_201_CREATED,
+    dependencies=[Depends(RoleChecker("admin", "manager"))],
 )
 async def create_weekly_report(project_id: int, payload: WeeklyReportCreate, db: AsyncSession = Depends(get_db)):
     project_result = await db.execute(select(Project).where(Project.id == project_id))
@@ -297,7 +300,7 @@ async def get_weekly_report(report_id: int, db: AsyncSession = Depends(get_db)):
     return report
 
 
-@router.patch("/weekly-reports/{report_id}", response_model=WeeklyReportResponse)
+@router.patch("/weekly-reports/{report_id}", response_model=WeeklyReportResponse, dependencies=[Depends(RoleChecker("admin", "manager"))])
 async def update_weekly_report(report_id: int, payload: WeeklyReportUpdate, db: AsyncSession = Depends(get_db)):
     result = await db.execute(select(WeeklyProgressReport).where(WeeklyProgressReport.id == report_id))
     report = result.scalar_one_or_none()
@@ -326,6 +329,7 @@ async def get_deliverables_checklist(project_id: int, db: AsyncSession = Depends
     "/projects/{project_id}/deliverables-checklist",
     response_model=DeliverablesChecklistResponse,
     status_code=status.HTTP_201_CREATED,
+    dependencies=[Depends(RoleChecker("admin", "manager"))],
 )
 async def create_deliverables_checklist(
     project_id: int,
@@ -350,7 +354,7 @@ async def create_deliverables_checklist(
     return checklist
 
 
-@router.patch("/projects/{project_id}/deliverables-checklist", response_model=DeliverablesChecklistResponse)
+@router.patch("/projects/{project_id}/deliverables-checklist", response_model=DeliverablesChecklistResponse, dependencies=[Depends(RoleChecker("admin", "manager"))])
 async def update_deliverables_checklist(
     project_id: int,
     payload: DeliverablesChecklistUpdate,
@@ -392,6 +396,7 @@ async def list_follow_up_meetings(
     "/projects/{project_id}/follow-up-meetings",
     response_model=FollowUpMeetingResponse,
     status_code=status.HTTP_201_CREATED,
+    dependencies=[Depends(RoleChecker("admin", "manager"))],
 )
 async def create_follow_up_meeting(project_id: int, payload: FollowUpMeetingCreate, db: AsyncSession = Depends(get_db)):
     project_result = await db.execute(select(Project).where(Project.id == project_id))
@@ -412,7 +417,7 @@ async def get_follow_up_meeting(meeting_id: int, db: AsyncSession = Depends(get_
     return meeting
 
 
-@router.patch("/follow-up-meetings/{meeting_id}", response_model=FollowUpMeetingResponse)
+@router.patch("/follow-up-meetings/{meeting_id}", response_model=FollowUpMeetingResponse, dependencies=[Depends(RoleChecker("admin", "manager"))])
 async def update_follow_up_meeting(meeting_id: int, payload: FollowUpMeetingUpdate, db: AsyncSession = Depends(get_db)):
     result = await db.execute(select(FollowUpMeeting).where(FollowUpMeeting.id == meeting_id))
     meeting = result.scalar_one_or_none()
@@ -441,6 +446,7 @@ async def get_handover_acceptance(project_id: int, db: AsyncSession = Depends(ge
     "/projects/{project_id}/handover-acceptance",
     response_model=HandoverAcceptanceResponse,
     status_code=status.HTTP_201_CREATED,
+    dependencies=[Depends(RoleChecker("admin", "manager"))],
 )
 async def create_handover_acceptance(
     project_id: int,
@@ -463,7 +469,7 @@ async def create_handover_acceptance(
     return ha
 
 
-@router.post("/handover-acceptance/{ha_id}/sign", response_model=HandoverAcceptanceResponse)
+@router.post("/handover-acceptance/{ha_id}/sign", response_model=HandoverAcceptanceResponse, dependencies=[Depends(RoleChecker("admin", "manager"))])
 async def sign_handover_acceptance(ha_id: int, db: AsyncSession = Depends(get_db)):
     result = await db.execute(select(HandoverAcceptance).where(HandoverAcceptance.id == ha_id))
     ha = result.scalar_one_or_none()
@@ -487,7 +493,7 @@ async def get_project_closure(project_id: int, db: AsyncSession = Depends(get_db
     return closure
 
 
-@router.post("/projects/{project_id}/closure", response_model=ProjectClosureResponse, status_code=status.HTTP_201_CREATED)
+@router.post("/projects/{project_id}/closure", response_model=ProjectClosureResponse, status_code=status.HTTP_201_CREATED, dependencies=[Depends(RoleChecker("admin", "manager"))])
 async def create_project_closure(
     project_id: int,
     payload: ProjectClosureCreate,
@@ -521,7 +527,7 @@ async def create_project_closure(
 
 # ─── Milestone Auto-Update ───────────────────────────────────────────────
 
-@router.post("/projects/{project_id}/sync-milestones", response_model=dict)
+@router.post("/projects/{project_id}/sync-milestones", response_model=dict, dependencies=[Depends(RoleChecker("admin", "manager"))])
 async def sync_project_milestones(project_id: int, db: AsyncSession = Depends(get_db)):
     """Trigger milestone-based status auto-update for a project."""
     status = await update_project_status_from_milestones(db, project_id)

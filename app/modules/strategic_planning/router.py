@@ -83,7 +83,7 @@ async def get_quality_policy(policy_id: int, db: AsyncSession = Depends(get_db))
     return policy
 
 
-@router.post("/quality-policies/{policy_id}/approve", response_model=QualityPolicyResponse)
+@router.post("/quality-policies/{policy_id}/approve", response_model=QualityPolicyResponse, dependencies=[Depends(RoleChecker("admin", "manager"))])
 async def approve_quality_policy(
     policy_id: int,
     payload: QualityPolicyApprove,
@@ -138,7 +138,7 @@ async def get_quality_objective(objective_id: int, db: AsyncSession = Depends(ge
     return obj
 
 
-@router.patch("/quality-objectives/{objective_id}/progress", response_model=QualityObjectiveResponse)
+@router.patch("/quality-objectives/{objective_id}/progress", response_model=QualityObjectiveResponse, dependencies=[Depends(RoleChecker("admin", "manager"))])
 async def update_objective_progress(
     objective_id: int,
     payload: QualityObjectiveUpdateProgress,
@@ -219,7 +219,7 @@ async def update_marketing_plan(
 
 # ─── Strategy Reviews ───────────────────────────────────────────────────
 
-@router.post("/strategy-reviews", response_model=StrategyReviewResponse, status_code=status.HTTP_201_CREATED)
+@router.post("/strategy-reviews", response_model=StrategyReviewResponse, status_code=status.HTTP_201_CREATED, dependencies=[Depends(RoleChecker("admin", "manager"))])
 async def create_strategy_review(payload: StrategyReviewCreate, db: AsyncSession = Depends(get_db)):
     review = StrategyReview(**payload.model_dump())
     db.add(review)
@@ -241,7 +241,7 @@ async def list_strategy_reviews(
 
 # ─── Management Review Reports ──────────────────────────────────────────
 
-@router.post("/management-reviews", response_model=ManagementReviewResponse, status_code=status.HTTP_201_CREATED)
+@router.post("/management-reviews", response_model=ManagementReviewResponse, status_code=status.HTTP_201_CREATED, dependencies=[Depends(RoleChecker("admin", "manager"))])
 async def create_management_review(
     payload: ManagementReviewCreate,
     db: AsyncSession = Depends(get_db),
@@ -299,7 +299,7 @@ async def get_current_qms_scope(db: AsyncSession = Depends(get_db)):
     return scope
 
 
-@router.post("/qms-scope", response_model=QmsScopeResponse, status_code=status.HTTP_201_CREATED)
+@router.post("/qms-scope", response_model=QmsScopeResponse, status_code=status.HTTP_201_CREATED, dependencies=[Depends(RoleChecker("admin", "manager"))])
 async def create_qms_scope(payload: QmsScopeCreate, db: AsyncSession = Depends(get_db)):
     # Deactivate any existing current scope
     existing = await get_active_qms_scope(db)
@@ -312,7 +312,7 @@ async def create_qms_scope(payload: QmsScopeCreate, db: AsyncSession = Depends(g
     return scope
 
 
-@router.patch("/qms-scope/{scope_id}", response_model=QmsScopeResponse)
+@router.patch("/qms-scope/{scope_id}", response_model=QmsScopeResponse, dependencies=[Depends(RoleChecker("admin", "manager"))])
 async def update_qms_scope(
     scope_id: int,
     payload: QmsScopeUpdate,

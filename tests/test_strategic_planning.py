@@ -354,3 +354,71 @@ class TestStrategicPlanningAuth:
             headers=_auth(token),
         )
         assert resp.status_code == 405
+
+    async def _register_and_login(self, client: AsyncClient, username: str, role: str) -> str:
+        await client.post("/auth/register", json={
+            "username": username,
+            "email": f"{username}@test.com",
+            "password": "password123",
+            "role": role,
+        })
+        resp = await client.post("/auth/login", json={
+            "username": username,
+            "password": "password123",
+        })
+        return resp.json()["access_token"]
+
+    async def test_viewer_cannot_approve_policy(self, client: AsyncClient):
+        admin_token = await self._register_and_login(client, "sp_admin_app", "admin")
+        viewer_token = await self._register_and_login(client, "sp_viewer_app", "viewer")
+
+        create = await client.post(
+            "/api/v1/strategic/quality-policies",
+            json=TestQualityPolicies.CREATE_PAYLOAD,
+            headers=_auth(admin_token),
+        )
+        assert create.status_code == 201, create.text
+        policy_id = create.json()["id"]
+
+        resp = await client.post(
+            f"/api/v1/strategic/quality-policies/{policy_id}/approve",
+            json={"approved_by": "viewer"},
+            headers=_auth(viewer_token),
+        )
+        assert resp.status_code == 403
+
+    async def test_admin_can_approve_policy(self, client: AsyncClient):
+        token = await self._register_and_login(client, "sp_admin_ap2", "admin")
+
+        create = await client.post(
+            "/api/v1/strategic/quality-policies",
+            json=TestQualityPolicies.CREATE_PAYLOAD,
+            headers=_auth(token),
+        )
+        assert create.status_code == 201, create.text
+        policy_id = create.json()["id"]
+
+        resp = await client.post(
+            f"/api/v1/strategic/quality-policies/{policy_id}/approve",
+            json={"approved_by": "admin"},
+            headers=_auth(token),
+        )
+        assert resp.status_code == 200
+
+    async def test_manager_can_approve_policy(self, client: AsyncClient):
+        token = await self._register_and_login(client, "sp_mgr_ap1", "manager")
+
+        create = await client.post(
+            "/api/v1/strategic/quality-policies",
+            json=TestQualityPolicies.CREATE_PAYLOAD,
+            headers=_auth(token),
+        )
+        assert create.status_code == 201, create.text
+        policy_id = create.json()["id"]
+
+        resp = await client.post(
+            f"/api/v1/strategic/quality-policies/{policy_id}/approve",
+            json={"approved_by": "manager"},
+            headers=_auth(token),
+        )
+        assert resp.status_code == 200

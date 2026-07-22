@@ -70,7 +70,7 @@ async def list_nps_surveys(
     return list(result.scalars().all())
 
 
-@router.post("/nps-surveys", response_model=NpsSurveyResponse, status_code=status.HTTP_201_CREATED)
+@router.post("/nps-surveys", response_model=NpsSurveyResponse, status_code=status.HTTP_201_CREATED, dependencies=[Depends(RoleChecker("admin", "manager"))])
 async def create_nps_survey(payload: NpsSurveyCreate, db: AsyncSession = Depends(get_db)):
     category = auto_categorize_nps(payload.score)
     survey = NpsSurvey(**payload.model_dump(exclude={"score"}), score=payload.score, category=category)
@@ -128,7 +128,7 @@ async def list_csat_surveys(
     return list(result.scalars().all())
 
 
-@router.post("/csat-surveys", response_model=CsatSurveyResponse, status_code=status.HTTP_201_CREATED)
+@router.post("/csat-surveys", response_model=CsatSurveyResponse, status_code=status.HTTP_201_CREATED, dependencies=[Depends(RoleChecker("admin", "manager"))])
 async def create_csat_survey(payload: CsatSurveyCreate, db: AsyncSession = Depends(get_db)):
     survey = CsatSurvey(**payload.model_dump())
     db.add(survey)
@@ -160,7 +160,7 @@ async def list_ces_surveys(
     return list(result.scalars().all())
 
 
-@router.post("/ces-surveys", response_model=CesSurveyResponse, status_code=status.HTTP_201_CREATED)
+@router.post("/ces-surveys", response_model=CesSurveyResponse, status_code=status.HTTP_201_CREATED, dependencies=[Depends(RoleChecker("admin", "manager"))])
 async def create_ces_survey(payload: CesSurveyCreate, db: AsyncSession = Depends(get_db)):
     survey = CesSurvey(**payload.model_dump())
     db.add(survey)
@@ -195,7 +195,7 @@ async def list_complaints(
     return list(result.scalars().all())
 
 
-@router.post("/complaints", response_model=ComplaintClaimResponse, status_code=status.HTTP_201_CREATED)
+@router.post("/complaints", response_model=ComplaintClaimResponse, status_code=status.HTTP_201_CREATED, dependencies=[Depends(RoleChecker("admin", "manager"))])
 async def create_complaint(payload: ComplaintClaimCreate, db: AsyncSession = Depends(get_db)):
     complaint = ComplaintClaim(**payload.model_dump())
     db.add(complaint)
@@ -226,7 +226,7 @@ async def get_complaint(complaint_id: int, db: AsyncSession = Depends(get_db)):
     return complaint
 
 
-@router.patch("/complaints/{complaint_id}", response_model=ComplaintClaimResponse)
+@router.patch("/complaints/{complaint_id}", response_model=ComplaintClaimResponse, dependencies=[Depends(RoleChecker("admin", "manager"))])
 async def update_complaint(
     complaint_id: int,
     payload: ComplaintClaimUpdate,
@@ -266,6 +266,7 @@ async def list_complaint_register(
     "/complaint-register",
     response_model=ComplaintRegisterResponse,
     status_code=status.HTTP_201_CREATED,
+    dependencies=[Depends(RoleChecker("admin", "manager"))],
 )
 async def create_complaint_register(payload: ComplaintRegisterCreate, db: AsyncSession = Depends(get_db)):
     # Verify linked complaint exists
@@ -305,7 +306,7 @@ async def list_exit_interviews(
     return list(result.scalars().all())
 
 
-@router.post("/exit-interviews", response_model=ExitInterviewResponse, status_code=status.HTTP_201_CREATED)
+@router.post("/exit-interviews", response_model=ExitInterviewResponse, status_code=status.HTTP_201_CREATED, dependencies=[Depends(RoleChecker("admin", "manager"))])
 async def create_exit_interview(payload: ExitInterviewCreate, db: AsyncSession = Depends(get_db)):
     interview = ExitInterview(**payload.model_dump())
     db.add(interview)
@@ -337,7 +338,7 @@ async def list_reports(
     return list(result.scalars().all())
 
 
-@router.post("/reports", response_model=SatisfactionReportResponse, status_code=status.HTTP_201_CREATED)
+@router.post("/reports", response_model=SatisfactionReportResponse, status_code=status.HTTP_201_CREATED, dependencies=[Depends(RoleChecker("admin", "manager"))])
 async def create_report(payload: SatisfactionReportCreate, db: AsyncSession = Depends(get_db)):
     report = SatisfactionReport(**payload.model_dump())
     db.add(report)

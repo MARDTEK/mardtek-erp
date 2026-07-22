@@ -325,7 +325,7 @@ class TestInfrastructureAuth:
             json=TestInfrastructureRequests.CREATE_PAYLOAD,
             headers=_auth(token),
         )
-        assert resp.status_code == 201
+        assert resp.status_code == 403
 
     async def test_viewer_cannot_delete(self, client: AsyncClient):
         """No DELETE endpoints exist in infrastructure; verify 405."""
@@ -342,3 +342,35 @@ class TestInfrastructureAuth:
             headers=_auth(token),
         )
         assert resp.status_code == 405
+
+    async def test_admin_can_create_request(self, client: AsyncClient):
+        await client.post("/auth/register", json={
+            "username": "infra_admin", "email": "infra_admin@test.com",
+            "password": "password123", "role": "admin",
+        })
+        login = await client.post("/auth/login", json={
+            "username": "infra_admin", "password": "password123",
+        })
+        token = login.json()["access_token"]
+        resp = await client.post(
+            "/api/v1/infrastructure/requests",
+            json=TestInfrastructureRequests.CREATE_PAYLOAD,
+            headers=_auth(token),
+        )
+        assert resp.status_code == 201, resp.text
+
+    async def test_manager_can_create_request(self, client: AsyncClient):
+        await client.post("/auth/register", json={
+            "username": "infra_mgr", "email": "infra_mgr@test.com",
+            "password": "password123", "role": "manager",
+        })
+        login = await client.post("/auth/login", json={
+            "username": "infra_mgr", "password": "password123",
+        })
+        token = login.json()["access_token"]
+        resp = await client.post(
+            "/api/v1/infrastructure/requests",
+            json=TestInfrastructureRequests.CREATE_PAYLOAD,
+            headers=_auth(token),
+        )
+        assert resp.status_code == 201, resp.text

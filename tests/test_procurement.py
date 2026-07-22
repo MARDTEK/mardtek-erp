@@ -373,3 +373,35 @@ class TestProcurementAuth:
             headers=_auth(token),
         )
         assert resp.status_code == 405
+
+    async def test_admin_can_create_supplier(self, client: AsyncClient):
+        await client.post("/auth/register", json={
+            "username": "proc_admin", "email": "proc_admin@test.com",
+            "password": "password123", "role": "admin",
+        })
+        login = await client.post("/auth/login", json={
+            "username": "proc_admin", "password": "password123",
+        })
+        token = login.json()["access_token"]
+        resp = await client.post(
+            "/api/v1/procurement/suppliers",
+            json=TestSuppliers.CREATE_PAYLOAD,
+            headers=_auth(token),
+        )
+        assert resp.status_code == 201, resp.text
+
+    async def test_manager_can_create_supplier(self, client: AsyncClient):
+        await client.post("/auth/register", json={
+            "username": "proc_mgr", "email": "proc_mgr@test.com",
+            "password": "password123", "role": "manager",
+        })
+        login = await client.post("/auth/login", json={
+            "username": "proc_mgr", "password": "password123",
+        })
+        token = login.json()["access_token"]
+        resp = await client.post(
+            "/api/v1/procurement/suppliers",
+            json=TestSuppliers.CREATE_PAYLOAD,
+            headers=_auth(token),
+        )
+        assert resp.status_code == 201, resp.text

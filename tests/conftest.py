@@ -69,6 +69,8 @@ def _ddl_engine():
     """Sync engine used once per session to create / drop tables."""
     sync_url = _sync_db_url(TEST_DB_URL)
     engine = create_engine(sync_url, echo=False)
+    # Drop tables FIRST to avoid CASCADE column loss from enum drops
+    Base.metadata.drop_all(engine)
     _drop_all_enums(engine)
     Base.metadata.create_all(engine)
     yield engine

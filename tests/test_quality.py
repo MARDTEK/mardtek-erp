@@ -509,3 +509,96 @@ class TestImprovements:
         )
         assert impl.status_code == 200
         assert impl.json()["status"] == "implemented"
+
+
+class TestQualityAuth:
+    """Auth guard tests for /api/v1/quality/*"""
+
+    async def _register_and_login(self, client: AsyncClient, username: str, role: str) -> str:
+        await client.post("/auth/register", json={
+            "username": username,
+            "email": f"{username}@test.com",
+            "password": "password123",
+            "role": role,
+        })
+        resp = await client.post("/auth/login", json={
+            "username": username,
+            "password": "password123",
+        })
+        return resp.json()["access_token"]
+
+    async def test_unauthenticated_request_blocked(self, client: AsyncClient):
+        resp = await client.get("/api/v1/quality/documents")
+        assert resp.status_code == 401
+
+    async def test_viewer_cannot_delete_document(self, client: AsyncClient):
+        admin_token = await self._register_and_login(client, "qmadmin1", "admin")
+        viewer_token = await self._register_and_login(client, "qmviewer1", "viewer")
+
+        create = await client.post(
+            "/api/v1/quality/documents",
+            json={"code": "SOP-P2-090-AUTH01", "title": "Auth Test", "process_code": "P2", "doc_type": "SOP"},
+            headers=_auth(admin_token),
+        )
+        assert create.status_code == 201, create.text
+        doc_id = create.json()["id"]
+
+        resp = await client.delete(
+            f"/api/v1/quality/documents/{doc_id}",
+            headers=_auth(viewer_token),
+        )
+        assert resp.status_code == 403
+
+    async def test_viewer_cannot_approve_document(self, client: AsyncClient):
+        admin_token = await self._register_and_login(client, "qmadmin2", "admin")
+        viewer_token = await self._register_and_login(client, "qmviewer2", "viewer")
+
+        create = await client.post(
+            "/api/v1/quality/documents",
+            json={"code": "SOP-P2-091-AUTH02", "title": "Approve Test", "process_code": "P2", "doc_type": "SOP"},
+            headers=_auth(admin_token),
+        )
+        assert create.status_code == 201, create.text
+        doc_id = create.json()["id"]
+
+        resp = await client.post(
+            f"/api/v1/quality/documents/{doc_id}/approve",
+            params={"approved_by": "viewer"},
+            headers=_auth(viewer_token),
+        )
+        assert resp.status_code == 403
+
+    async def test_admin_can_delete_document(self, client: AsyncClient):
+        token = await self._register_and_login(client, "qmadmin3", "admin")
+
+        create = await client.post(
+            "/api/v1/quality/documents",
+            json={"code": "SOP-P2-092-AUTH03", "title": "Admin Delete", "process_code": "P2", "doc_type": "SOP"},
+            headers=_auth(token),
+        )
+        assert create.status_code == 201, create.text
+        doc_id = create.json()["id"]
+
+        resp = await client.delete(
+            f"/api/v1/quality/documents/{doc_id}",
+            headers=_auth(token),
+        )
+        assert resp.status_code == 200
+
+    async def test_manager_can_approve_document(self, client: AsyncClient):
+        token = await self._register_and_login(client, "qmmanager1", "manager")
+
+        create = await client.post(
+            "/api/v1/quality/documents",
+            json={"code": "SOP-P2-093-AUTH04", "title": "Manager Approve", "process_code": "P2", "doc_type": "SOP"},
+            headers=_auth(token),
+        )
+        assert create.status_code == 201, create.text
+        doc_id = create.json()["id"]
+
+        resp = await client.post(
+            f"/api/v1/quality/documents/{doc_id}/approve",
+            params={"approved_by": "manager"},
+            headers=_auth(token),
+        )
+        assert resp.status_code == 200
