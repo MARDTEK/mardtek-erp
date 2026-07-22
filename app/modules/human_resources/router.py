@@ -9,6 +9,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.auth.dependencies import RoleChecker, get_current_user
 from app.core.database import get_db
 from app.core.event_bus import Event, event_bus
+from app.core.pagination import PaginationParams, paginate
 from app.modules.human_resources.domain.logic import (
     get_active_headcount,
     get_employees_by_competency_gap,
@@ -60,13 +61,14 @@ async def list_job_descriptions(
     department: str | None = None,
     is_active: bool | None = None,
     db: AsyncSession = Depends(get_db),
+    page: PaginationParams = Depends(),
 ):
     stmt = select(JobDescription)
     if department:
         stmt = stmt.where(JobDescription.department == department)
     if is_active is not None:
         stmt = stmt.where(JobDescription.is_active == is_active)
-    result = await db.execute(stmt.order_by(JobDescription.code))
+    result = await db.execute(paginate(stmt.order_by(JobDescription.code), page))
     return list(result.scalars().all())
 
 
@@ -118,13 +120,14 @@ async def list_personnel_requests(
     department: str | None = None,
     status: str | None = None,
     db: AsyncSession = Depends(get_db),
+    page: PaginationParams = Depends(),
 ):
     stmt = select(PersonnelRequest)
     if department:
         stmt = stmt.where(PersonnelRequest.department == department)
     if status:
         stmt = stmt.where(PersonnelRequest.status == status)
-    result = await db.execute(stmt.order_by(PersonnelRequest.created_at.desc()))
+    result = await db.execute(paginate(stmt.order_by(PersonnelRequest.created_at.desc()), page))
     return list(result.scalars().all())
 
 
@@ -165,11 +168,12 @@ async def update_personnel_request(pr_id: int, payload: PersonnelRequestUpdate, 
 async def list_induction_checklists(
     status: str | None = None,
     db: AsyncSession = Depends(get_db),
+    page: PaginationParams = Depends(),
 ):
     stmt = select(InductionChecklist)
     if status:
         stmt = stmt.where(InductionChecklist.status == status)
-    result = await db.execute(stmt.order_by(InductionChecklist.hire_date.desc()))
+    result = await db.execute(paginate(stmt.order_by(InductionChecklist.hire_date.desc()), page))
     return list(result.scalars().all())
 
 
@@ -215,11 +219,12 @@ async def update_induction_checklist(ic_id: int, payload: InductionChecklistUpda
 async def list_development_plans(
     status: str | None = None,
     db: AsyncSession = Depends(get_db),
+    page: PaginationParams = Depends(),
 ):
     stmt = select(IndividualDevelopmentPlan)
     if status:
         stmt = stmt.where(IndividualDevelopmentPlan.status == status)
-    result = await db.execute(stmt.order_by(IndividualDevelopmentPlan.review_date.desc().nullslast()))
+    result = await db.execute(paginate(stmt.order_by(IndividualDevelopmentPlan.review_date.desc().nullslast()), page))
     return list(result.scalars().all())
 
 
@@ -270,6 +275,7 @@ async def list_evaluations(
     status: str | None = None,
     period: str | None = None,
     db: AsyncSession = Depends(get_db),
+    page: PaginationParams = Depends(),
 ):
     stmt = select(PerformanceEvaluation)
     if employee_name:
@@ -278,7 +284,7 @@ async def list_evaluations(
         stmt = stmt.where(PerformanceEvaluation.status == status)
     if period:
         stmt = stmt.where(PerformanceEvaluation.period == period)
-    result = await db.execute(stmt.order_by(PerformanceEvaluation.created_at.desc()))
+    result = await db.execute(paginate(stmt.order_by(PerformanceEvaluation.created_at.desc()), page))
     return list(result.scalars().all())
 
 
@@ -335,13 +341,14 @@ async def list_labor_incidents(
     incident_type: str | None = None,
     status: str | None = None,
     db: AsyncSession = Depends(get_db),
+    page: PaginationParams = Depends(),
 ):
     stmt = select(LaborIncident)
     if incident_type:
         stmt = stmt.where(LaborIncident.incident_type == incident_type)
     if status:
         stmt = stmt.where(LaborIncident.status == status)
-    result = await db.execute(stmt.order_by(LaborIncident.created_at.desc()))
+    result = await db.execute(paginate(stmt.order_by(LaborIncident.created_at.desc()), page))
     return list(result.scalars().all())
 
 
@@ -384,6 +391,7 @@ async def list_staff(
     status: str | None = None,
     contract_type: str | None = None,
     db: AsyncSession = Depends(get_db),
+    page: PaginationParams = Depends(),
 ):
     stmt = select(StaffRegister)
     if department:
@@ -392,7 +400,7 @@ async def list_staff(
         stmt = stmt.where(StaffRegister.status == status)
     if contract_type:
         stmt = stmt.where(StaffRegister.contract_type == contract_type)
-    result = await db.execute(stmt.order_by(StaffRegister.employee_name))
+    result = await db.execute(paginate(stmt.order_by(StaffRegister.employee_name), page))
     return list(result.scalars().all())
 
 

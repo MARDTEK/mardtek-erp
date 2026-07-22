@@ -10,6 +10,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.auth.dependencies import RoleChecker, get_current_user
 from app.core.database import get_db
 from app.core.event_bus import Event, event_bus
+from app.core.pagination import PaginationParams, paginate
 from app.modules.analytics_performance.domain.logic import (
     calculate_indicator_status,
     consolidate_process_kpis,
@@ -53,13 +54,14 @@ async def list_indicators(
     process_code: str | None = None,
     is_active: bool | None = None,
     db: AsyncSession = Depends(get_db),
+    page: PaginationParams = Depends(),
 ):
     stmt = select(PerformanceIndicator)
     if process_code:
         stmt = stmt.where(PerformanceIndicator.process_code == process_code)
     if is_active is not None:
         stmt = stmt.where(PerformanceIndicator.is_active == is_active)
-    result = await db.execute(stmt.order_by(PerformanceIndicator.code))
+    result = await db.execute(paginate(stmt.order_by(PerformanceIndicator.code), page))
     return list(result.scalars().all())
 
 
@@ -119,6 +121,7 @@ async def list_data_records(
     indicator_id: int,
     period: str | None = None,
     db: AsyncSession = Depends(get_db),
+    page: PaginationParams = Depends(),
 ):
     stmt = (
         select(PerformanceDataRecord)
@@ -126,7 +129,7 @@ async def list_data_records(
     )
     if period:
         stmt = stmt.where(PerformanceDataRecord.period == period)
-    result = await db.execute(stmt.order_by(PerformanceDataRecord.recorded_at.desc()))
+    result = await db.execute(paginate(stmt.order_by(PerformanceDataRecord.recorded_at.desc()), page))
     return list(result.scalars().all())
 
 
@@ -221,11 +224,12 @@ async def get_trend_analysis(
 async def list_trend_reports(
     indicator_id: int | None = None,
     db: AsyncSession = Depends(get_db),
+    page: PaginationParams = Depends(),
 ):
     stmt = select(TrendAnalysisReport)
     if indicator_id:
         stmt = stmt.where(TrendAnalysisReport.indicator_id == indicator_id)
-    result = await db.execute(stmt.order_by(TrendAnalysisReport.created_at.desc()))
+    result = await db.execute(paginate(stmt.order_by(TrendAnalysisReport.created_at.desc()), page))
     return list(result.scalars().all())
 
 
@@ -259,13 +263,14 @@ async def list_kpi_reports(
     period_start: date | None = None,
     period_end: date | None = None,
     db: AsyncSession = Depends(get_db),
+    page: PaginationParams = Depends(),
 ):
     stmt = select(KpiReport)
     if period_start:
         stmt = stmt.where(KpiReport.period_start >= period_start)
     if period_end:
         stmt = stmt.where(KpiReport.period_end <= period_end)
-    result = await db.execute(stmt.order_by(KpiReport.created_at.desc()))
+    result = await db.execute(paginate(stmt.order_by(KpiReport.created_at.desc()), page))
     return list(result.scalars().all())
 
 
@@ -327,11 +332,12 @@ async def get_consolidated_report(
 async def list_dashboards(
     is_default: bool | None = None,
     db: AsyncSession = Depends(get_db),
+    page: PaginationParams = Depends(),
 ):
     stmt = select(PerformanceDashboard)
     if is_default is not None:
         stmt = stmt.where(PerformanceDashboard.is_default == is_default)
-    result = await db.execute(stmt.order_by(PerformanceDashboard.code))
+    result = await db.execute(paginate(stmt.order_by(PerformanceDashboard.code), page))
     return list(result.scalars().all())
 
 

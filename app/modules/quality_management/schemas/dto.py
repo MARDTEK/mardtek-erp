@@ -73,7 +73,7 @@ class NCUpdateRootCause(BaseModel):
 
 
 class NCStateTransition(BaseModel):
-    target_status: str = Field(..., pattern=r"^(investigating|corrective_action|closed)$")
+    target_status: str = Field(..., pattern=r"^(investigating|corrective_action|verification|closed)$")
 
 
 # ─── Corrective Action ───────────────────────────────────────────────────

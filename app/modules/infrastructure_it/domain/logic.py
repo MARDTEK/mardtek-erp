@@ -2,10 +2,9 @@
 
 from __future__ import annotations
 
-from collections import defaultdict
 from typing import Dict
 
-from sqlalchemy import select
+from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.modules.infrastructure_it.domain.models import (
@@ -57,12 +56,8 @@ async def get_open_incidents_by_severity(db: AsyncSession) -> Dict[str, int]:
         A dict mapping severity level (P1, P2, P3, P4) to count.
     """
     result = await db.execute(
-        select(IncidentReport).where(IncidentReport.status != IncidentStatus.CLOSED)
+        select(IncidentReport.severity, func.count(IncidentReport.id))
+        .where(IncidentReport.status != IncidentStatus.CLOSED)
+        .group_by(IncidentReport.severity)
     )
-    incidents = result.scalars().all()
-
-    counts: Dict[str, int] = defaultdict(int)
-    for inc in incidents:
-        counts[inc.severity.value] += 1
-
-    return dict(counts)
+    return {row[0].value: row[1] for row in result.all()}

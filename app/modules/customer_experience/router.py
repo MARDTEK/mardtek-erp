@@ -9,6 +9,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.auth.dependencies import RoleChecker, get_current_user
 from app.core.database import get_db
 from app.core.event_bus import Event, event_bus
+from app.core.pagination import PaginationParams, paginate
 from app.modules.customer_experience.domain.logic import (
     auto_categorize_nps,
     calculate_csat,
@@ -59,11 +60,12 @@ NPS_TARGET: int = 60  # SGC minimum threshold defined in P10
 async def list_nps_surveys(
     category: str | None = None,
     db: AsyncSession = Depends(get_db),
+    page: PaginationParams = Depends(),
 ):
     stmt = select(NpsSurvey)
     if category:
         stmt = stmt.where(NpsSurvey.category == category)
-    result = await db.execute(stmt.order_by(NpsSurvey.responded_at.desc()))
+    result = await db.execute(paginate(stmt.order_by(NpsSurvey.responded_at.desc()), page))
     return list(result.scalars().all())
 
 
@@ -109,11 +111,12 @@ async def get_nps_survey(survey_id: int, db: AsyncSession = Depends(get_db)):
 async def list_csat_surveys(
     project_id: int | None = None,
     db: AsyncSession = Depends(get_db),
+    page: PaginationParams = Depends(),
 ):
     stmt = select(CsatSurvey)
     if project_id:
         stmt = stmt.where(CsatSurvey.project_id == project_id)
-    result = await db.execute(stmt.order_by(CsatSurvey.responded_at.desc()))
+    result = await db.execute(paginate(stmt.order_by(CsatSurvey.responded_at.desc()), page))
     return list(result.scalars().all())
 
 
@@ -140,11 +143,12 @@ async def get_csat_survey(survey_id: int, db: AsyncSession = Depends(get_db)):
 async def list_ces_surveys(
     subscription_id: int | None = None,
     db: AsyncSession = Depends(get_db),
+    page: PaginationParams = Depends(),
 ):
     stmt = select(CesSurvey)
     if subscription_id:
         stmt = stmt.where(CesSurvey.subscription_id == subscription_id)
-    result = await db.execute(stmt.order_by(CesSurvey.responded_at.desc()))
+    result = await db.execute(paginate(stmt.order_by(CesSurvey.responded_at.desc()), page))
     return list(result.scalars().all())
 
 
@@ -172,13 +176,14 @@ async def list_complaints(
     status_filter: str | None = None,
     type_filter: str | None = None,
     db: AsyncSession = Depends(get_db),
+    page: PaginationParams = Depends(),
 ):
     stmt = select(ComplaintClaim)
     if status_filter:
         stmt = stmt.where(ComplaintClaim.status == status_filter)
     if type_filter:
         stmt = stmt.where(ComplaintClaim.type == type_filter)
-    result = await db.execute(stmt.order_by(ComplaintClaim.created_at.desc()))
+    result = await db.execute(paginate(stmt.order_by(ComplaintClaim.created_at.desc()), page))
     return list(result.scalars().all())
 
 
@@ -240,11 +245,12 @@ async def list_complaints_by_status(status: str, db: AsyncSession = Depends(get_
 async def list_complaint_register(
     category: str | None = None,
     db: AsyncSession = Depends(get_db),
+    page: PaginationParams = Depends(),
 ):
     stmt = select(ComplaintRegister)
     if category:
         stmt = stmt.where(ComplaintRegister.category == category)
-    result = await db.execute(stmt.order_by(ComplaintRegister.registered_at.desc()))
+    result = await db.execute(paginate(stmt.order_by(ComplaintRegister.registered_at.desc()), page))
     return list(result.scalars().all())
 
 
@@ -282,11 +288,12 @@ async def get_complaint_register_entry(entry_id: int, db: AsyncSession = Depends
 async def list_exit_interviews(
     churn_reason: str | None = None,
     db: AsyncSession = Depends(get_db),
+    page: PaginationParams = Depends(),
 ):
     stmt = select(ExitInterview)
     if churn_reason:
         stmt = stmt.where(ExitInterview.churn_reason_category == churn_reason)
-    result = await db.execute(stmt.order_by(ExitInterview.interview_date.desc()))
+    result = await db.execute(paginate(stmt.order_by(ExitInterview.interview_date.desc()), page))
     return list(result.scalars().all())
 
 
@@ -313,11 +320,12 @@ async def get_exit_interview(interview_id: int, db: AsyncSession = Depends(get_d
 async def list_reports(
     period: str | None = None,
     db: AsyncSession = Depends(get_db),
+    page: PaginationParams = Depends(),
 ):
     stmt = select(SatisfactionReport)
     if period:
         stmt = stmt.where(SatisfactionReport.period == period)
-    result = await db.execute(stmt.order_by(SatisfactionReport.created_at.desc()))
+    result = await db.execute(paginate(stmt.order_by(SatisfactionReport.created_at.desc()), page))
     return list(result.scalars().all())
 
 

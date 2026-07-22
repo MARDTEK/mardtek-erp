@@ -9,6 +9,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.auth.dependencies import RoleChecker, get_current_user
 from app.core.database import get_db
 from app.core.event_bus import Event, event_bus
+from app.core.pagination import PaginationParams, paginate
 from app.modules.pmo_projects.domain.logic import (
     calculate_project_progress,
     close_project,
@@ -60,6 +61,7 @@ router = APIRouter(dependencies=[Depends(get_current_user)])
 
 @router.get("/projects", response_model=List[ProjectResponse])
 async def list_projects(
+    page: PaginationParams = Depends(),
     status: str | None = None,
     product_line: str | None = None,
     project_manager: str | None = None,
@@ -72,7 +74,7 @@ async def list_projects(
         stmt = stmt.where(Project.product_line == product_line)
     if project_manager:
         stmt = stmt.where(Project.project_manager == project_manager)
-    result = await db.execute(stmt.order_by(Project.created_at.desc()))
+    result = await db.execute(paginate(stmt.order_by(Project.created_at.desc()), page))
     return list(result.scalars().all())
 
 
@@ -117,12 +119,17 @@ async def get_project_progress(project_id: int, db: AsyncSession = Depends(get_d
 # ─── Execution Plans ─────────────────────────────────────────────────────
 
 @router.get("/projects/{project_id}/execution-plans", response_model=List[ExecutionPlanResponse])
-async def list_execution_plans(project_id: int, db: AsyncSession = Depends(get_db)):
-    result = await db.execute(
+async def list_execution_plans(
+    project_id: int,
+    page: PaginationParams = Depends(),
+    db: AsyncSession = Depends(get_db),
+):
+    result = await db.execute(paginate(
         select(ProjectExecutionPlan)
         .where(ProjectExecutionPlan.project_id == project_id)
-        .order_by(ProjectExecutionPlan.created_at.desc())
-    )
+        .order_by(ProjectExecutionPlan.created_at.desc()),
+        page,
+    ))
     return list(result.scalars().all())
 
 
@@ -167,13 +174,14 @@ async def update_execution_plan(plan_id: int, payload: ExecutionPlanUpdate, db: 
 @router.get("/projects/{project_id}/change-requests", response_model=List[ChangeRequestResponse])
 async def list_change_requests(
     project_id: int,
+    page: PaginationParams = Depends(),
     status_filter: str | None = None,
     db: AsyncSession = Depends(get_db),
 ):
     stmt = select(ChangeRequest).where(ChangeRequest.project_id == project_id)
     if status_filter:
         stmt = stmt.where(ChangeRequest.status == status_filter)
-    result = await db.execute(stmt.order_by(ChangeRequest.created_at.desc()))
+    result = await db.execute(paginate(stmt.order_by(ChangeRequest.created_at.desc()), page))
     return list(result.scalars().all())
 
 
@@ -251,6 +259,7 @@ async def list_overdue_change_requests(project_id: int, db: AsyncSession = Depen
 @router.get("/projects/{project_id}/weekly-reports", response_model=List[WeeklyReportResponse])
 async def list_weekly_reports(
     project_id: int,
+    page: PaginationParams = Depends(),
     year: int | None = None,
     db: AsyncSession = Depends(get_db),
 ):
@@ -260,7 +269,7 @@ async def list_weekly_reports(
     )
     if year:
         stmt = stmt.where(WeeklyProgressReport.year == year)
-    result = await db.execute(stmt.order_by(WeeklyProgressReport.year.desc(), WeeklyProgressReport.week_number.desc()))
+    result = await db.execute(paginate(stmt.order_by(WeeklyProgressReport.year.desc(), WeeklyProgressReport.week_number.desc()), page))
     return list(result.scalars().all())
 
 
@@ -365,12 +374,17 @@ async def update_deliverables_checklist(
 # ─── Follow-Up Meetings ──────────────────────────────────────────────────
 
 @router.get("/projects/{project_id}/follow-up-meetings", response_model=List[FollowUpMeetingResponse])
-async def list_follow_up_meetings(project_id: int, db: AsyncSession = Depends(get_db)):
-    result = await db.execute(
+async def list_follow_up_meetings(
+    project_id: int,
+    page: PaginationParams = Depends(),
+    db: AsyncSession = Depends(get_db),
+):
+    result = await db.execute(paginate(
         select(FollowUpMeeting)
         .where(FollowUpMeeting.project_id == project_id)
-        .order_by(FollowUpMeeting.date.desc())
-    )
+        .order_by(FollowUpMeeting.date.desc()),
+        page,
+    ))
     return list(result.scalars().all())
 
 

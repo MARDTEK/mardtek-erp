@@ -9,6 +9,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.auth.dependencies import RoleChecker, get_current_user
 from app.core.database import get_db
 from app.core.event_bus import Event, event_bus
+from app.core.pagination import PaginationParams, paginate
 from app.modules.quality_management.domain.logic import (
     approve_document,
     close_nc,
@@ -59,13 +60,14 @@ async def list_documents(
     process_code: str | None = None,
     status: str | None = None,
     db: AsyncSession = Depends(get_db),
+    page: PaginationParams = Depends(),
 ):
     stmt = select(Document)
     if process_code:
         stmt = stmt.where(Document.process_code == process_code)
     if status:
         stmt = stmt.where(Document.status == status)
-    result = await db.execute(stmt.order_by(Document.code))
+    result = await db.execute(paginate(stmt.order_by(Document.code), page))
     return list(result.scalars().all())
 
 
@@ -153,13 +155,14 @@ async def list_non_conformities(
     status_filter: str | None = None,
     severity: str | None = None,
     db: AsyncSession = Depends(get_db),
+    page: PaginationParams = Depends(),
 ):
     stmt = select(NonConformity)
     if status_filter:
         stmt = stmt.where(NonConformity.status == status_filter)
     if severity:
         stmt = stmt.where(NonConformity.severity == severity)
-    result = await db.execute(stmt.order_by(NonConformity.code.desc()))
+    result = await db.execute(paginate(stmt.order_by(NonConformity.code.desc()), page))
     return list(result.scalars().all())
 
 
@@ -260,13 +263,14 @@ async def list_corrective_actions(
     nc_id: int | None = None,
     status_filter: str | None = None,
     db: AsyncSession = Depends(get_db),
+    page: PaginationParams = Depends(),
 ):
     stmt = select(CorrectiveAction)
     if nc_id:
         stmt = stmt.where(CorrectiveAction.nc_id == nc_id)
     if status_filter:
         stmt = stmt.where(CorrectiveAction.status == status_filter)
-    result = await db.execute(stmt.order_by(CorrectiveAction.code))
+    result = await db.execute(paginate(stmt.order_by(CorrectiveAction.code), page))
     return list(result.scalars().all())
 
 
@@ -334,13 +338,14 @@ async def list_audits(
     process_code: str | None = None,
     status_filter: str | None = None,
     db: AsyncSession = Depends(get_db),
+    page: PaginationParams = Depends(),
 ):
     stmt = select(InternalAudit)
     if process_code:
         stmt = stmt.where(InternalAudit.audited_process == process_code)
     if status_filter:
         stmt = stmt.where(InternalAudit.status == status_filter)
-    result = await db.execute(stmt.order_by(InternalAudit.scheduled_date.desc()))
+    result = await db.execute(paginate(stmt.order_by(InternalAudit.scheduled_date.desc()), page))
     return list(result.scalars().all())
 
 
@@ -388,9 +393,13 @@ async def complete_audit_endpoint(
 # ─── Audit Checklist ─────────────────────────────────────────────────────
 
 @router.get("/audits/{audit_id}/checklist", response_model=List[ChecklistItemResponse])
-async def list_checklist(audit_id: int, db: AsyncSession = Depends(get_db)):
+async def list_checklist(
+    audit_id: int,
+    db: AsyncSession = Depends(get_db),
+    page: PaginationParams = Depends(),
+):
     result = await db.execute(
-        select(AuditChecklistItem).where(AuditChecklistItem.audit_id == audit_id)
+        paginate(select(AuditChecklistItem).where(AuditChecklistItem.audit_id == audit_id), page)
     )
     return list(result.scalars().all())
 
@@ -426,8 +435,11 @@ async def update_checklist_item(item_id: int, payload: ChecklistItemUpdate, db: 
 # ─── Process Owners ──────────────────────────────────────────────────────
 
 @router.get("/process-owners", response_model=List[ProcessOwnerResponse])
-async def list_process_owners(db: AsyncSession = Depends(get_db)):
-    result = await db.execute(select(ProcessOwner).order_by(ProcessOwner.process_code))
+async def list_process_owners(
+    db: AsyncSession = Depends(get_db),
+    page: PaginationParams = Depends(),
+):
+    result = await db.execute(paginate(select(ProcessOwner).order_by(ProcessOwner.process_code), page))
     return list(result.scalars().all())
 
 
@@ -466,11 +478,12 @@ async def delete_process_owner(owner_id: int, db: AsyncSession = Depends(get_db)
 async def list_improvements(
     status_filter: str | None = None,
     db: AsyncSession = Depends(get_db),
+    page: PaginationParams = Depends(),
 ):
     stmt = select(ContinuousImprovement)
     if status_filter:
         stmt = stmt.where(ContinuousImprovement.status == status_filter)
-    result = await db.execute(stmt.order_by(ContinuousImprovement.code.desc()))
+    result = await db.execute(paginate(stmt.order_by(ContinuousImprovement.code.desc()), page))
     return list(result.scalars().all())
 
 

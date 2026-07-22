@@ -11,6 +11,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.auth.dependencies import RoleChecker, get_current_user
 from app.core.database import get_db
 from app.core.event_bus import Event, event_bus
+from app.core.pagination import PaginationParams, paginate
 from app.modules.tech_development.domain.logic import (
     calculate_qa_pass_rate,
     create_deployment_record,
@@ -65,6 +66,7 @@ async def list_roadmaps(
     year: int | None = None,
     status: str | None = None,
     db: AsyncSession = Depends(get_db),
+    page: PaginationParams = Depends(),
 ):
     stmt = select(ProductRoadmap)
     if product_line:
@@ -73,7 +75,7 @@ async def list_roadmaps(
         stmt = stmt.where(ProductRoadmap.year == year)
     if status:
         stmt = stmt.where(ProductRoadmap.status == status)
-    result = await db.execute(stmt.order_by(ProductRoadmap.year.desc()))
+    result = await db.execute(paginate(stmt.order_by(ProductRoadmap.year.desc()), page))
     return list(result.scalars().all())
 
 
@@ -124,6 +126,7 @@ async def list_releases(
     status: str | None = None,
     product: str | None = None,
     db: AsyncSession = Depends(get_db),
+    page: PaginationParams = Depends(),
 ):
     if status:
         return await get_release_by_status(db, status)
@@ -131,7 +134,7 @@ async def list_releases(
     stmt = select(ReleasePlan)
     if product:
         stmt = stmt.where(ReleasePlan.product == product)
-    result = await db.execute(stmt.order_by(ReleasePlan.planned_date.desc()))
+    result = await db.execute(paginate(stmt.order_by(ReleasePlan.planned_date.desc()), page))
     return list(result.scalars().all())
 
 
@@ -183,6 +186,7 @@ async def list_specifications(
     product: str | None = None,
     status: str | None = None,
     db: AsyncSession = Depends(get_db),
+    page: PaginationParams = Depends(),
 ):
     stmt = select(TechnicalSpecification)
     if project_id is not None:
@@ -191,7 +195,7 @@ async def list_specifications(
         stmt = stmt.where(TechnicalSpecification.product == product)
     if status:
         stmt = stmt.where(TechnicalSpecification.status == status)
-    result = await db.execute(stmt.order_by(TechnicalSpecification.code))
+    result = await db.execute(paginate(stmt.order_by(TechnicalSpecification.code), page))
     return list(result.scalars().all())
 
 
@@ -245,11 +249,12 @@ async def delete_specification(spec_id: int, db: AsyncSession = Depends(get_db))
 async def list_risk_matrices(
     project_id: int | None = None,
     db: AsyncSession = Depends(get_db),
+    page: PaginationParams = Depends(),
 ):
     stmt = select(RiskMatrix)
     if project_id is not None:
         stmt = stmt.where(RiskMatrix.project_id == project_id)
-    result = await db.execute(stmt.order_by(RiskMatrix.code))
+    result = await db.execute(paginate(stmt.order_by(RiskMatrix.code), page))
     return list(result.scalars().all())
 
 
@@ -305,6 +310,7 @@ async def list_qa_reports(
     status: str | None = None,
     release_id: int | None = None,
     db: AsyncSession = Depends(get_db),
+    page: PaginationParams = Depends(),
 ):
     stmt = select(QATestReport)
     if test_type:
@@ -313,7 +319,7 @@ async def list_qa_reports(
         stmt = stmt.where(QATestReport.status == status)
     if release_id is not None:
         stmt = stmt.where(QATestReport.release_id == release_id)
-    result = await db.execute(stmt.order_by(QATestReport.created_at.desc()))
+    result = await db.execute(paginate(stmt.order_by(QATestReport.created_at.desc()), page))
     return list(result.scalars().all())
 
 
@@ -387,6 +393,7 @@ async def list_deployments(
     status: str | None = None,
     release_id: int | None = None,
     db: AsyncSession = Depends(get_db),
+    page: PaginationParams = Depends(),
 ):
     stmt = select(DeploymentRecord)
     if environment:
@@ -395,7 +402,7 @@ async def list_deployments(
         stmt = stmt.where(DeploymentRecord.status == status)
     if release_id is not None:
         stmt = stmt.where(DeploymentRecord.release_id == release_id)
-    result = await db.execute(stmt.order_by(DeploymentRecord.deployed_at.desc()))
+    result = await db.execute(paginate(stmt.order_by(DeploymentRecord.deployed_at.desc()), page))
     return list(result.scalars().all())
 
 
@@ -448,6 +455,7 @@ async def list_uat_signoffs(
     project_id: int | None = None,
     status: str | None = None,
     db: AsyncSession = Depends(get_db),
+    page: PaginationParams = Depends(),
 ):
     stmt = select(UATSignOff)
     if release_id is not None:
@@ -456,7 +464,7 @@ async def list_uat_signoffs(
         stmt = stmt.where(UATSignOff.project_id == project_id)
     if status:
         stmt = stmt.where(UATSignOff.status == status)
-    result = await db.execute(stmt.order_by(UATSignOff.signed_at.desc()))
+    result = await db.execute(paginate(stmt.order_by(UATSignOff.signed_at.desc()), page))
     return list(result.scalars().all())
 
 
@@ -511,13 +519,14 @@ async def list_sunsets(
     status: str | None = None,
     product: str | None = None,
     db: AsyncSession = Depends(get_db),
+    page: PaginationParams = Depends(),
 ):
     stmt = select(SolutionSunset)
     if status:
         stmt = stmt.where(SolutionSunset.status == status)
     if product:
         stmt = stmt.where(SolutionSunset.product == product)
-    result = await db.execute(stmt.order_by(SolutionSunset.sunset_date))
+    result = await db.execute(paginate(stmt.order_by(SolutionSunset.sunset_date), page))
     return list(result.scalars().all())
 
 

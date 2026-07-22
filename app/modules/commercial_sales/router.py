@@ -10,6 +10,7 @@ from sqlalchemy.orm import selectinload
 from app.auth.dependencies import RoleChecker, get_current_user
 from app.core.database import get_db
 from app.core.event_bus import Event, event_bus
+from app.core.pagination import PaginationParams, paginate
 from app.modules.commercial_sales.domain.logic import (
     accept_proposal,
     activate_subscription,
@@ -60,6 +61,7 @@ router = APIRouter(dependencies=[Depends(get_current_user)])
 
 @router.get("/leads", response_model=List[LeadResponse])
 async def list_leads(
+    page: PaginationParams = Depends(),
     status: str | None = None,
     product_line: str | None = None,
     assigned_to: str | None = None,
@@ -72,7 +74,7 @@ async def list_leads(
         stmt = stmt.where(Lead.product_line == product_line)
     if assigned_to:
         stmt = stmt.where(Lead.assigned_to == assigned_to)
-    result = await db.execute(stmt.order_by(Lead.created_at.desc()))
+    result = await db.execute(paginate(stmt.order_by(Lead.created_at.desc()), page))
     return list(result.scalars().all())
 
 
@@ -164,10 +166,15 @@ async def create_discovery(lead_id: int, payload: DiscoveryCreate, db: AsyncSess
 # ─── Proposals ───────────────────────────────────────────────────────────
 
 @router.get("/leads/{lead_id}/proposals", response_model=List[ProposalResponse])
-async def list_proposals(lead_id: int, db: AsyncSession = Depends(get_db)):
-    result = await db.execute(
-        select(Proposal).where(Proposal.lead_id == lead_id).order_by(Proposal.created_at.desc())
-    )
+async def list_proposals(
+    lead_id: int,
+    page: PaginationParams = Depends(),
+    db: AsyncSession = Depends(get_db),
+):
+    result = await db.execute(paginate(
+        select(Proposal).where(Proposal.lead_id == lead_id).order_by(Proposal.created_at.desc()),
+        page,
+    ))
     return list(result.scalars().all())
 
 
@@ -205,6 +212,7 @@ async def accept_proposal_endpoint(proposal_id: int, db: AsyncSession = Depends(
 
 @router.get("/contracts", response_model=List[ContractResponse])
 async def list_contracts(
+    page: PaginationParams = Depends(),
     contract_type: str | None = None,
     status: str | None = None,
     db: AsyncSession = Depends(get_db),
@@ -214,7 +222,7 @@ async def list_contracts(
         stmt = stmt.where(Contract.contract_type == contract_type)
     if status:
         stmt = stmt.where(Contract.status == status)
-    result = await db.execute(stmt.order_by(Contract.signed_at.desc()))
+    result = await db.execute(paginate(stmt.order_by(Contract.signed_at.desc()), page))
     return list(result.scalars().all())
 
 
@@ -322,10 +330,15 @@ async def create_account_plan(contract_id: int, payload: AccountPlanCreate, db: 
 
 
 @router.get("/contracts/{contract_id}/account-plans", response_model=List[AccountPlanResponse])
-async def list_account_plans(contract_id: int, db: AsyncSession = Depends(get_db)):
-    result = await db.execute(
-        select(AccountPlan).where(AccountPlan.contract_id == contract_id)
-    )
+async def list_account_plans(
+    contract_id: int,
+    page: PaginationParams = Depends(),
+    db: AsyncSession = Depends(get_db),
+):
+    result = await db.execute(paginate(
+        select(AccountPlan).where(AccountPlan.contract_id == contract_id).order_by(AccountPlan.id),
+        page,
+    ))
     return list(result.scalars().all())
 
 
@@ -361,10 +374,15 @@ async def create_retention_action(
     "/subscriptions/{subscription_id}/retention",
     response_model=List[RetentionActionResponse],
 )
-async def list_retention_actions(subscription_id: int, db: AsyncSession = Depends(get_db)):
-    result = await db.execute(
-        select(RetentionAction).where(RetentionAction.subscription_id == subscription_id)
-    )
+async def list_retention_actions(
+    subscription_id: int,
+    page: PaginationParams = Depends(),
+    db: AsyncSession = Depends(get_db),
+):
+    result = await db.execute(paginate(
+        select(RetentionAction).where(RetentionAction.subscription_id == subscription_id).order_by(RetentionAction.id),
+        page,
+    ))
     return list(result.scalars().all())
 
 
@@ -372,13 +390,14 @@ async def list_retention_actions(subscription_id: int, db: AsyncSession = Depend
 
 @router.get("/icp-matrix", response_model=List[IcpMatrixResponse])
 async def list_icp_matrix(
+    page: PaginationParams = Depends(),
     industry: str | None = None,
     db: AsyncSession = Depends(get_db),
 ):
     stmt = select(IcpMatrix)
     if industry:
         stmt = stmt.where(IcpMatrix.industry.ilike(f"%{industry}%"))
-    result = await db.execute(stmt)
+    result = await db.execute(paginate(stmt.order_by(IcpMatrix.id), page))
     return list(result.scalars().all())
 
 

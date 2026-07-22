@@ -10,6 +10,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.auth.dependencies import RoleChecker, get_current_user
 from app.core.database import get_db
 from app.core.event_bus import Event, event_bus
+from app.core.pagination import PaginationParams, paginate
 from app.modules.procurement.domain.logic import (
     calculate_supplier_score,
     get_suppliers_due_for_reevaluation,
@@ -51,6 +52,7 @@ router = APIRouter(dependencies=[Depends(get_current_user)])
 
 @router.get("/purchase-requests", response_model=List[PurchaseRequestResponse])
 async def list_purchase_requests(
+    page: PaginationParams = Depends(),
     status_filter: Optional[str] = Query(None, alias="status"),
     requester: Optional[str] = None,
     category: Optional[str] = None,
@@ -63,7 +65,7 @@ async def list_purchase_requests(
         stmt = stmt.where(PurchaseRequest.requester == requester)
     if category:
         stmt = stmt.where(PurchaseRequest.category == category)
-    result = await db.execute(stmt.order_by(PurchaseRequest.created_at.desc()))
+    result = await db.execute(paginate(stmt.order_by(PurchaseRequest.created_at.desc()), page))
     return list(result.scalars().all())
 
 
@@ -165,6 +167,7 @@ async def order_purchase_request(pr_id: int, db: AsyncSession = Depends(get_db))
 
 @router.get("/suppliers", response_model=List[SupplierRegistrationResponse])
 async def list_suppliers(
+    page: PaginationParams = Depends(),
     status_filter: Optional[str] = Query(None, alias="status"),
     company_name: Optional[str] = None,
     db: AsyncSession = Depends(get_db),
@@ -174,7 +177,7 @@ async def list_suppliers(
         stmt = stmt.where(SupplierRegistration.status == status_filter)
     if company_name:
         stmt = stmt.where(SupplierRegistration.company_name.ilike(f"%{company_name}%"))
-    result = await db.execute(stmt.order_by(SupplierRegistration.created_at.desc()))
+    result = await db.execute(paginate(stmt.order_by(SupplierRegistration.created_at.desc()), page))
     return list(result.scalars().all())
 
 
@@ -237,6 +240,7 @@ async def reject_supplier(supplier_id: int, db: AsyncSession = Depends(get_db)):
 
 @router.get("/evaluations", response_model=List[SupplierEvaluationResponse])
 async def list_evaluations(
+    page: PaginationParams = Depends(),
     supplier_id: Optional[int] = None,
     status_filter: Optional[str] = Query(None, alias="status"),
     db: AsyncSession = Depends(get_db),
@@ -246,7 +250,7 @@ async def list_evaluations(
         stmt = stmt.where(SupplierEvaluation.supplier_id == supplier_id)
     if status_filter:
         stmt = stmt.where(SupplierEvaluation.status == status_filter)
-    result = await db.execute(stmt.order_by(SupplierEvaluation.created_at.desc()))
+    result = await db.execute(paginate(stmt.order_by(SupplierEvaluation.created_at.desc()), page))
     return list(result.scalars().all())
 
 
@@ -312,6 +316,7 @@ async def complete_evaluation(eval_id: int, db: AsyncSession = Depends(get_db)):
 
 @router.get("/performance-reports", response_model=List[SupplierPerformanceReportResponse])
 async def list_performance_reports(
+    page: PaginationParams = Depends(),
     supplier_id: Optional[int] = None,
     period: Optional[str] = None,
     db: AsyncSession = Depends(get_db),
@@ -321,7 +326,7 @@ async def list_performance_reports(
         stmt = stmt.where(SupplierPerformanceReport.supplier_id == supplier_id)
     if period:
         stmt = stmt.where(SupplierPerformanceReport.period == period)
-    result = await db.execute(stmt.order_by(SupplierPerformanceReport.created_at.desc()))
+    result = await db.execute(paginate(stmt.order_by(SupplierPerformanceReport.created_at.desc()), page))
     return list(result.scalars().all())
 
 
@@ -361,6 +366,7 @@ async def get_performance_report(report_id: int, db: AsyncSession = Depends(get_
 
 @router.get("/receiving-reports", response_model=List[ReceivingReportResponse])
 async def list_receiving_reports(
+    page: PaginationParams = Depends(),
     purchase_request_id: Optional[int] = None,
     condition_ok: Optional[bool] = None,
     db: AsyncSession = Depends(get_db),
@@ -370,7 +376,7 @@ async def list_receiving_reports(
         stmt = stmt.where(ReceivingReport.purchase_request_id == purchase_request_id)
     if condition_ok is not None:
         stmt = stmt.where(ReceivingReport.condition_ok == condition_ok)
-    result = await db.execute(stmt.order_by(ReceivingReport.received_date.desc()))
+    result = await db.execute(paginate(stmt.order_by(ReceivingReport.received_date.desc()), page))
     return list(result.scalars().all())
 
 
@@ -402,6 +408,7 @@ async def get_receiving_report(report_id: int, db: AsyncSession = Depends(get_db
 
 @router.get("/register", response_model=List[SupplierRegisterResponse])
 async def list_supplier_register(
+    page: PaginationParams = Depends(),
     category: Optional[str] = None,
     is_active: Optional[bool] = None,
     db: AsyncSession = Depends(get_db),
@@ -411,7 +418,7 @@ async def list_supplier_register(
         stmt = stmt.where(SupplierRegister.category == category)
     if is_active is not None:
         stmt = stmt.where(SupplierRegister.is_active == is_active)
-    result = await db.execute(stmt.order_by(SupplierRegister.approved_at.desc()))
+    result = await db.execute(paginate(stmt.order_by(SupplierRegister.approved_at.desc()), page))
     return list(result.scalars().all())
 
 

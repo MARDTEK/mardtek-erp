@@ -10,6 +10,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.auth.dependencies import RoleChecker, get_current_user
 from app.core.database import get_db
 from app.core.event_bus import Event, event_bus
+from app.core.pagination import PaginationParams, paginate
 from app.modules.strategic_planning.domain.logic import (
     calculate_objective_progress,
     create_management_review_report,
@@ -54,13 +55,14 @@ router = APIRouter(dependencies=[Depends(get_current_user)])
 
 @router.get("/quality-policies", response_model=List[QualityPolicyResponse])
 async def list_quality_policies(
+    page: PaginationParams = Depends(),
     status_filter: str | None = Query(None, alias="status"),
     db: AsyncSession = Depends(get_db),
 ):
     stmt = select(QualityPolicy)
     if status_filter:
         stmt = stmt.where(QualityPolicy.status == status_filter)
-    result = await db.execute(stmt.order_by(QualityPolicy.code))
+    result = await db.execute(paginate(stmt.order_by(QualityPolicy.code), page))
     return list(result.scalars().all())
 
 
@@ -102,6 +104,7 @@ async def approve_quality_policy(
 
 @router.get("/quality-objectives", response_model=List[QualityObjectiveResponse])
 async def list_quality_objectives(
+    page: PaginationParams = Depends(),
     year: int | None = None,
     process_code: str | None = None,
     status_filter: str | None = Query(None, alias="status"),
@@ -114,7 +117,7 @@ async def list_quality_objectives(
         stmt = stmt.where(QualityObjective.process_code == process_code)
     if status_filter:
         stmt = stmt.where(QualityObjective.status == status_filter)
-    result = await db.execute(stmt.order_by(QualityObjective.code))
+    result = await db.execute(paginate(stmt.order_by(QualityObjective.code), page))
     return list(result.scalars().all())
 
 
@@ -167,6 +170,7 @@ async def update_objective_progress(
 
 @router.get("/marketing-plans", response_model=List[MarketingPlanResponse])
 async def list_marketing_plans(
+    page: PaginationParams = Depends(),
     year: int | None = None,
     status_filter: str | None = Query(None, alias="status"),
     db: AsyncSession = Depends(get_db),
@@ -176,7 +180,7 @@ async def list_marketing_plans(
         stmt = stmt.where(MarketingPlan.year == year)
     if status_filter:
         stmt = stmt.where(MarketingPlan.status == status_filter)
-    result = await db.execute(stmt.order_by(MarketingPlan.year.desc(), MarketingPlan.code))
+    result = await db.execute(paginate(stmt.order_by(MarketingPlan.year.desc(), MarketingPlan.code), page))
     return list(result.scalars().all())
 
 
@@ -225,11 +229,13 @@ async def create_strategy_review(payload: StrategyReviewCreate, db: AsyncSession
 
 @router.get("/strategy-reviews", response_model=List[StrategyReviewResponse])
 async def list_strategy_reviews(
+    page: PaginationParams = Depends(),
     db: AsyncSession = Depends(get_db),
 ):
-    result = await db.execute(
-        select(StrategyReview).order_by(StrategyReview.date.desc())
-    )
+    result = await db.execute(paginate(
+        select(StrategyReview).order_by(StrategyReview.date.desc()),
+        page,
+    ))
     return list(result.scalars().all())
 
 
@@ -273,11 +279,13 @@ async def create_management_review(
 
 @router.get("/management-reviews", response_model=List[ManagementReviewResponse])
 async def list_management_reviews(
+    page: PaginationParams = Depends(),
     db: AsyncSession = Depends(get_db),
 ):
-    result = await db.execute(
-        select(ManagementReviewReport).order_by(ManagementReviewReport.created_at.desc())
-    )
+    result = await db.execute(paginate(
+        select(ManagementReviewReport).order_by(ManagementReviewReport.created_at.desc()),
+        page,
+    ))
     return list(result.scalars().all())
 
 

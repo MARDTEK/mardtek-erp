@@ -239,7 +239,7 @@ class TestNonConformities:
         assert resp.json()["status"] == "corrective_action"
 
     async def test_transition_ca_to_closed(self, client: AsyncClient, admin_token: str):
-        """CORRECTIVE_ACTION → CLOSED requires all CAs verified."""
+        """CORRECTIVE_ACTION → VERIFICATION → CLOSED full flow."""
         nc = (await client.post("/api/v1/quality/non-conformities", json={
             **self.CREATE_PAYLOAD, "code": "NC-2026-022",
         }, headers=_auth(admin_token))).json()
@@ -278,6 +278,15 @@ class TestNonConformities:
             json={"effectiveness_review": "Effective"},
             headers=_auth(admin_token),
         )
+
+        # Transition to verification
+        resp = await client.patch(
+            f"/api/v1/quality/non-conformities/{nc['id']}/transition",
+            json={"target_status": "verification"},
+            headers=_auth(admin_token),
+        )
+        assert resp.status_code == 200
+        assert resp.json()["status"] == "verification"
 
         # Now close should work
         resp = await client.patch(

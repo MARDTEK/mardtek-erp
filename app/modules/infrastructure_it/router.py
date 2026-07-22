@@ -9,6 +9,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.auth.dependencies import RoleChecker, get_current_user
 from app.core.database import get_db
 from app.core.event_bus import Event, event_bus
+from app.core.pagination import PaginationParams, paginate
 from app.modules.infrastructure_it.domain.logic import get_open_incidents_by_severity
 from app.modules.infrastructure_it.domain.models import (
     AvailabilityReport,
@@ -52,13 +53,14 @@ async def list_requests(
     resource_type: str | None = None,
     status_filter: str | None = None,
     db: AsyncSession = Depends(get_db),
+    page: PaginationParams = Depends(),
 ):
     stmt = select(InfrastructureRequest)
     if resource_type:
         stmt = stmt.where(InfrastructureRequest.resource_type == resource_type)
     if status_filter:
         stmt = stmt.where(InfrastructureRequest.status == status_filter)
-    result = await db.execute(stmt.order_by(InfrastructureRequest.code))
+    result = await db.execute(paginate(stmt.order_by(InfrastructureRequest.code), page))
     return list(result.scalars().all())
 
 
@@ -102,13 +104,14 @@ async def list_sla_agreements(
     provider: str | None = None,
     status_filter: str | None = None,
     db: AsyncSession = Depends(get_db),
+    page: PaginationParams = Depends(),
 ):
     stmt = select(SlaAgreement)
     if provider:
         stmt = stmt.where(SlaAgreement.provider.ilike(f"%{provider}%"))
     if status_filter:
         stmt = stmt.where(SlaAgreement.status == status_filter)
-    result = await db.execute(stmt.order_by(SlaAgreement.code))
+    result = await db.execute(paginate(stmt.order_by(SlaAgreement.code), page))
     return list(result.scalars().all())
 
 
@@ -153,6 +156,7 @@ async def list_incidents(
     status_filter: str | None = None,
     service: str | None = None,
     db: AsyncSession = Depends(get_db),
+    page: PaginationParams = Depends(),
 ):
     stmt = select(IncidentReport)
     if severity:
@@ -161,7 +165,7 @@ async def list_incidents(
         stmt = stmt.where(IncidentReport.status == status_filter)
     if service:
         stmt = stmt.where(IncidentReport.service.ilike(f"%{service}%"))
-    result = await db.execute(stmt.order_by(IncidentReport.created_at.desc()))
+    result = await db.execute(paginate(stmt.order_by(IncidentReport.created_at.desc()), page))
     return list(result.scalars().all())
 
 
@@ -233,13 +237,14 @@ async def list_availability_reports(
     service: str | None = None,
     sla_met: bool | None = None,
     db: AsyncSession = Depends(get_db),
+    page: PaginationParams = Depends(),
 ):
     stmt = select(AvailabilityReport)
     if service:
         stmt = stmt.where(AvailabilityReport.service.ilike(f"%{service}%"))
     if sla_met is not None:
         stmt = stmt.where(AvailabilityReport.sla_met == sla_met)
-    result = await db.execute(stmt.order_by(AvailabilityReport.created_at.desc()))
+    result = await db.execute(paginate(stmt.order_by(AvailabilityReport.created_at.desc()), page))
     return list(result.scalars().all())
 
 
@@ -288,11 +293,12 @@ async def get_availability_report(report_id: int, db: AsyncSession = Depends(get
 async def list_continuity_plans(
     status_filter: str | None = None,
     db: AsyncSession = Depends(get_db),
+    page: PaginationParams = Depends(),
 ):
     stmt = select(BusinessContinuityPlan)
     if status_filter:
         stmt = stmt.where(BusinessContinuityPlan.status == status_filter)
-    result = await db.execute(stmt.order_by(BusinessContinuityPlan.code))
+    result = await db.execute(paginate(stmt.order_by(BusinessContinuityPlan.code), page))
     return list(result.scalars().all())
 
 
@@ -340,13 +346,14 @@ async def list_security_incidents(
     incident_type: str | None = None,
     status_filter: str | None = None,
     db: AsyncSession = Depends(get_db),
+    page: PaginationParams = Depends(),
 ):
     stmt = select(SecurityIncident)
     if incident_type:
         stmt = stmt.where(SecurityIncident.incident_type == incident_type)
     if status_filter:
         stmt = stmt.where(SecurityIncident.status == status_filter)
-    result = await db.execute(stmt.order_by(SecurityIncident.created_at.desc()))
+    result = await db.execute(paginate(stmt.order_by(SecurityIncident.created_at.desc()), page))
     return list(result.scalars().all())
 
 
@@ -395,6 +402,7 @@ async def list_maintenance_records(
     maintenance_type: str | None = None,
     status_filter: str | None = None,
     db: AsyncSession = Depends(get_db),
+    page: PaginationParams = Depends(),
 ):
     stmt = select(MaintenanceRecord)
     if asset:
@@ -403,7 +411,7 @@ async def list_maintenance_records(
         stmt = stmt.where(MaintenanceRecord.maintenance_type == maintenance_type)
     if status_filter:
         stmt = stmt.where(MaintenanceRecord.status == status_filter)
-    result = await db.execute(stmt.order_by(MaintenanceRecord.scheduled_date.desc()))
+    result = await db.execute(paginate(stmt.order_by(MaintenanceRecord.scheduled_date.desc()), page))
     return list(result.scalars().all())
 
 

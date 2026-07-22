@@ -80,9 +80,10 @@ async def transition_nc_status(
     """Transition NC status with state-machine validation.
 
     Allowed transitions:
-      - open         → investigating       (always allowed)
-      - investigating → corrective_action  (requires at least one CA)
-      - corrective_action → closed         (requires all CAs verified)
+      - open              → investigating        (always allowed)
+      - investigating     → corrective_action    (requires at least one CA)
+      - corrective_action → verification         (requires all CAs verified)
+      - verification      → closed               (always allowed)
 
     Raises HTTPException 409 for invalid transitions.
     Returns None if NC not found.
@@ -115,7 +116,7 @@ async def transition_nc_status(
             )
         nc.status = NCStatus.CORRECTIVE_ACTION
 
-    elif nc.status == NCStatus.CORRECTIVE_ACTION and target_status == "closed":
+    elif nc.status == NCStatus.CORRECTIVE_ACTION and target_status == "verification":
         ca_result = await db.execute(
             select(CorrectiveAction).where(CorrectiveAction.nc_id == nc_id)
         )
@@ -123,8 +124,11 @@ async def transition_nc_status(
         if actions and any(a.status != ActionStatus.VERIFIED for a in actions):
             raise HTTPException(
                 status_code=409,
-                detail="Cannot close: not all corrective actions are verified",
+                detail="Cannot transition: not all corrective actions are verified",
             )
+        nc.status = NCStatus.VERIFICATION
+
+    elif nc.status == NCStatus.VERIFICATION and target_status == "closed":
         from datetime import datetime, timezone
         nc.status = NCStatus.CLOSED
         nc.closed_at = datetime.now(timezone.utc)

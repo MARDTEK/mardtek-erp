@@ -11,6 +11,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.auth.dependencies import RoleChecker, get_current_user
 from app.core.database import get_db
 from app.core.event_bus import Event, event_bus
+from app.core.pagination import PaginationParams, paginate
 from app.modules.training_services.domain.logic import (
     calculate_training_effectiveness,
     get_certifications_by_participant,
@@ -74,6 +75,7 @@ async def list_needs(
     status_filter: str | None = None,
     role: str | None = None,
     db: AsyncSession = Depends(get_db),
+    page: PaginationParams = Depends(),
 ):
     stmt = select(TrainingNeedsAssessment)
     if priority:
@@ -82,7 +84,7 @@ async def list_needs(
         stmt = stmt.where(TrainingNeedsAssessment.status == status_filter)
     if role:
         stmt = stmt.where(TrainingNeedsAssessment.role.ilike(f"%{role}%"))
-    result = await db.execute(stmt.order_by(TrainingNeedsAssessment.code))
+    result = await db.execute(paginate(stmt.order_by(TrainingNeedsAssessment.code), page))
     return list(result.scalars().all())
 
 
@@ -126,13 +128,14 @@ async def list_competency_matrices(
     role: str | None = None,
     is_active: bool | None = None,
     db: AsyncSession = Depends(get_db),
+    page: PaginationParams = Depends(),
 ):
     stmt = select(CompetencyMatrix)
     if role:
         stmt = stmt.where(CompetencyMatrix.role.ilike(f"%{role}%"))
     if is_active is not None:
         stmt = stmt.where(CompetencyMatrix.is_active == is_active)
-    result = await db.execute(stmt.order_by(CompetencyMatrix.code))
+    result = await db.execute(paginate(stmt.order_by(CompetencyMatrix.code), page))
     return list(result.scalars().all())
 
 
@@ -195,13 +198,14 @@ async def list_courses(
     modality: str | None = None,
     status_filter: str | None = None,
     db: AsyncSession = Depends(get_db),
+    page: PaginationParams = Depends(),
 ):
     stmt = select(Course)
     if modality:
         stmt = stmt.where(Course.modality == modality)
     if status_filter:
         stmt = stmt.where(Course.status == status_filter)
-    result = await db.execute(stmt.order_by(Course.code))
+    result = await db.execute(paginate(stmt.order_by(Course.code), page))
     return list(result.scalars().all())
 
 
@@ -241,13 +245,14 @@ async def list_plans(
     year: int | None = None,
     status_filter: str | None = None,
     db: AsyncSession = Depends(get_db),
+    page: PaginationParams = Depends(),
 ):
     stmt = select(TrainingPlan)
     if year:
         stmt = stmt.where(TrainingPlan.year == year)
     if status_filter:
         stmt = stmt.where(TrainingPlan.status == status_filter)
-    result = await db.execute(stmt.order_by(TrainingPlan.year.desc()))
+    result = await db.execute(paginate(stmt.order_by(TrainingPlan.year.desc()), page))
     return list(result.scalars().all())
 
 
@@ -288,6 +293,7 @@ async def list_sessions(
     status_filter: str | None = None,
     instructor: str | None = None,
     db: AsyncSession = Depends(get_db),
+    page: PaginationParams = Depends(),
 ):
     stmt = select(TrainingSession)
     if course_id is not None:
@@ -296,7 +302,7 @@ async def list_sessions(
         stmt = stmt.where(TrainingSession.status == status_filter)
     if instructor:
         stmt = stmt.where(TrainingSession.instructor.ilike(f"%{instructor}%"))
-    result = await db.execute(stmt.order_by(TrainingSession.start_date.desc()))
+    result = await db.execute(paginate(stmt.order_by(TrainingSession.start_date.desc()), page))
     return list(result.scalars().all())
 
 
@@ -369,13 +375,14 @@ async def list_evaluations(
     session_id: int | None = None,
     participant: str | None = None,
     db: AsyncSession = Depends(get_db),
+    page: PaginationParams = Depends(),
 ):
     stmt = select(TrainingEvaluation)
     if session_id is not None:
         stmt = stmt.where(TrainingEvaluation.session_id == session_id)
     if participant:
         stmt = stmt.where(TrainingEvaluation.participant.ilike(f"%{participant}%"))
-    result = await db.execute(stmt.order_by(TrainingEvaluation.submitted_at.desc()))
+    result = await db.execute(paginate(stmt.order_by(TrainingEvaluation.submitted_at.desc()), page))
     return list(result.scalars().all())
 
 
@@ -419,13 +426,14 @@ async def list_attendance(
     session_id: int | None = None,
     participant_name: str | None = None,
     db: AsyncSession = Depends(get_db),
+    page: PaginationParams = Depends(),
 ):
     stmt = select(AttendanceRecord)
     if session_id is not None:
         stmt = stmt.where(AttendanceRecord.session_id == session_id)
     if participant_name:
         stmt = stmt.where(AttendanceRecord.participant_name.ilike(f"%{participant_name}%"))
-    result = await db.execute(stmt.order_by(AttendanceRecord.signed_at.desc()))
+    result = await db.execute(paginate(stmt.order_by(AttendanceRecord.signed_at.desc()), page))
     return list(result.scalars().all())
 
 
@@ -481,6 +489,7 @@ async def list_certifications(
     status_filter: str | None = None,
     course_id: int | None = None,
     db: AsyncSession = Depends(get_db),
+    page: PaginationParams = Depends(),
 ):
     stmt = select(CertificationRecord)
     if participant_name:
@@ -489,7 +498,7 @@ async def list_certifications(
         stmt = stmt.where(CertificationRecord.status == status_filter)
     if course_id is not None:
         stmt = stmt.where(CertificationRecord.course_id == course_id)
-    result = await db.execute(stmt.order_by(CertificationRecord.issued_at.desc()))
+    result = await db.execute(paginate(stmt.order_by(CertificationRecord.issued_at.desc()), page))
     return list(result.scalars().all())
 
 
@@ -564,13 +573,14 @@ async def list_manuals(
     product: str | None = None,
     status_filter: str | None = None,
     db: AsyncSession = Depends(get_db),
+    page: PaginationParams = Depends(),
 ):
     stmt = select(UserManual)
     if product:
         stmt = stmt.where(UserManual.product.ilike(f"%{product}%"))
     if status_filter:
         stmt = stmt.where(UserManual.status == status_filter)
-    result = await db.execute(stmt.order_by(UserManual.code))
+    result = await db.execute(paginate(stmt.order_by(UserManual.code), page))
     return list(result.scalars().all())
 
 
@@ -614,13 +624,14 @@ async def list_video_tutorials(
     course_id: int | None = None,
     status_filter: str | None = None,
     db: AsyncSession = Depends(get_db),
+    page: PaginationParams = Depends(),
 ):
     stmt = select(VideoTutorial)
     if course_id is not None:
         stmt = stmt.where(VideoTutorial.course_id == course_id)
     if status_filter:
         stmt = stmt.where(VideoTutorial.status == status_filter)
-    result = await db.execute(stmt.order_by(VideoTutorial.code))
+    result = await db.execute(paginate(stmt.order_by(VideoTutorial.code), page))
     return list(result.scalars().all())
 
 
