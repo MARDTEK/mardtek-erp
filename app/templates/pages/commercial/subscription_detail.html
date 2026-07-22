@@ -1,0 +1,83 @@
+{% extends "base.html" %}
+{% from 'macros.html' import status_badge %}
+{% block title %}Subscription — {{ contract.contract_number }}{% endblock %}
+{% block page_title %}Subscription — {{ contract.contract_number }}{% endblock %}
+
+{% block content %}
+<div class="space-y-6" x-data="{showChurn:false}">
+  <!-- Header -->
+  <div class="flex items-start justify-between">
+    <div>
+      <p class="text-secondary-500 text-sm">Contract: {{ contract.contract_number }}</p>
+      <h2 class="text-xl font-bold text-gray-900 mt-1">SaaS Subscription</h2>
+    </div>
+    {% if item %}
+    <div class="flex items-center gap-2">
+      {{ status_badge(item.status.value if item.status.value is defined else item.status) }}
+      {% if item.status.value not in ('active', 'churned') %}
+      <form method="post" action="/commercial/subscriptions/{{ item.id }}/activate" class="inline">
+        <button type="submit" class="px-3 py-1.5 bg-emerald-600 text-white text-xs rounded-lg hover:bg-emerald-700">Activate</button>
+      </form>
+      {% endif %}
+      {% if item.status.value not in ('churned',) %}
+      <button @click="showChurn = true" class="px-3 py-1.5 border border-red-200 text-red-600 text-xs rounded-lg hover:bg-red-50">Churn</button>
+      {% endif %}
+    </div>
+    {% endif %}
+  </div>
+
+  {% if item %}
+  <!-- Details grid -->
+  <div class="bg-white rounded-lg border p-6">
+    <dl class="grid grid-cols-2 gap-4 text-sm">
+      <div><dt class="text-secondary-500">Product</dt><dd class="font-medium mt-1">{{ item.product }}</dd></div>
+      <div><dt class="text-secondary-500">Tier</dt><dd class="font-medium mt-1">{{ (item.tier.value if item.tier.value is defined else item.tier) | title }}</dd></div>
+      <div><dt class="text-secondary-500">Seats</dt><dd class="font-medium mt-1">{{ item.seats }}</dd></div>
+      <div><dt class="text-secondary-500">Activated At</dt><dd class="font-medium mt-1">{{ item.activated_at.strftime('%Y-%m-%d %H:%M') if item.activated_at else '—' }}</dd></div>
+      <div><dt class="text-secondary-500">Churned At</dt><dd class="font-medium mt-1">{{ item.churned_at.strftime('%Y-%m-%d %H:%M') if item.churned_at else '—' }}</dd></div>
+      <div><dt class="text-secondary-500">Churn Reason</dt><dd class="font-medium mt-1">{{ item.churn_reason or '—' }}</dd></div>
+    </dl>
+  </div>
+
+  <!-- Quick links -->
+  <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+    <a href="/commercial/subscriptions/{{ item.id }}/retention"
+       class="bg-white rounded-lg border p-4 hover:border-primary-300 transition-colors">
+      <h3 class="text-sm font-semibold text-secondary-700">Retention Actions</h3>
+      <p class="text-xs text-secondary-500 mt-1">Prevent churn and manage retention</p>
+    </a>
+    <a href="/commercial/contracts/{{ contract.id }}"
+       class="bg-white rounded-lg border p-4 hover:border-primary-300 transition-colors">
+      <h3 class="text-sm font-semibold text-secondary-700">View Contract</h3>
+      <p class="text-xs text-secondary-500 mt-1">{{ contract.contract_number }}</p>
+    </a>
+  </div>
+
+  <!-- Churn Modal -->
+  <div x-show="showChurn" x-cloak class="fixed inset-0 z-50 flex items-center justify-center">
+    <div class="fixed inset-0 bg-black/50" @click="showChurn = false"></div>
+    <div class="relative bg-white rounded-xl shadow-xl w-full max-w-sm mx-4 p-6">
+      <h3 class="text-lg font-semibold mb-2">Churn Subscription?</h3>
+      <p class="text-secondary-500 text-sm mb-4">This will mark the subscription as churned.</p>
+      <form method="post" action="/commercial/subscriptions/{{ item.id }}/churn">
+        <div class="mb-4">
+          <label class="block text-sm font-medium text-secondary-700 mb-1">Reason (optional)</label>
+          <textarea name="churn_reason" rows="2" placeholder="Why is this subscription being churned?"
+                    class="w-full px-3 py-2 border border-secondary-200 rounded-lg text-sm focus:ring-2 focus:ring-primary-500"></textarea>
+        </div>
+        <div class="flex justify-center gap-2">
+          <button type="button" @click="showChurn = false" class="px-4 py-2 text-secondary-600 text-sm rounded-lg hover:bg-secondary-50">Cancel</button>
+          <button type="submit" class="px-4 py-2 bg-red-600 text-white text-sm rounded-lg hover:bg-red-700">Confirm Churn</button>
+        </div>
+      </form>
+    </div>
+  </div>
+  {% else %}
+  <div class="text-center py-12 text-secondary-400 bg-white rounded-lg border">
+    <p class="text-sm">No subscription associated with this contract.</p>
+  </div>
+  {% endif %}
+
+  <a href="/commercial/contracts/{{ contract.id }}" class="text-sm text-primary-600 hover:text-primary-800">&larr; Back to Contract</a>
+</div>
+{% endblock %}

@@ -1,0 +1,95 @@
+{% extends "base.html" %}
+{% from 'macros.html' import status_badge %}
+{% block title %}{{ item.code }} — Releases{% endblock %}
+{% block page_title %}Release {{ item.code }}{% endblock %}
+
+{% block content %}
+<div class="space-y-6" x-data="{showDelete:false}">
+  <!-- Header -->
+  <div class="flex items-start justify-between">
+    <div>
+      <p class="text-secondary-500 text-sm">{{ item.product }} | {{ item.version }}</p>
+      <h2 class="text-xl font-bold text-gray-900 mt-1">{{ item.title }}</h2>
+    </div>
+    <div class="flex items-center gap-2">
+      {{ status_badge(item.status) }}
+      {% if item.status == 'planned' %}
+      <form method="post" action="/development/releases/{{ item.id }}/deploy" class="inline">
+        <button type="submit" class="px-3 py-1.5 bg-sky-600 text-white text-xs rounded-lg hover:bg-sky-700">Deploy</button>
+      </form>
+      {% elif item.status == 'in_progress' %}
+      <form method="post" action="/development/releases/{{ item.id }}/complete" class="inline">
+        <button type="submit" class="px-3 py-1.5 bg-emerald-600 text-white text-xs rounded-lg hover:bg-emerald-700">Complete</button>
+      </form>
+      {% elif item.status == 'deployed' %}
+      <form method="post" action="/development/releases/{{ item.id }}/rollback" class="inline">
+        <button type="submit" class="px-3 py-1.5 bg-red-600 text-white text-xs rounded-lg hover:bg-red-700">Rollback</button>
+      </form>
+      {% endif %}
+      <a href="/development/releases/{{ item.id }}/edit" class="px-3 py-1.5 border border-secondary-200 text-secondary-700 text-xs rounded-lg hover:bg-secondary-50">Edit</a>
+      {% if item.is_deleted %}
+      <form method="post" action="/development/releases/{{ item.id }}/restore" class="inline">
+        <button type="submit" class="px-3 py-1.5 bg-amber-600 text-white text-xs rounded-lg hover:bg-amber-700">Restore</button>
+      </form>
+      {% else %}
+      <button @click="showDelete = true" class="px-3 py-1.5 border border-red-200 text-red-600 text-xs rounded-lg hover:bg-red-50">Delete</button>
+      {% endif %}
+    </div>
+  </div>
+
+  {% if item.is_deleted %}
+  <div class="bg-red-50 border border-red-200 rounded-lg p-4 text-sm text-red-700">
+    This release has been soft-deleted. It is no longer visible in list views.
+  </div>
+  {% endif %}
+
+  <!-- Details grid -->
+  <div class="bg-white rounded-lg border p-6">
+    <dl class="grid grid-cols-2 gap-4 text-sm">
+      <div><dt class="text-secondary-500">Planned Date</dt><dd class="font-medium mt-1">{{ item.planned_date.strftime('%Y-%m-%d') if item.planned_date else '—' }}</dd></div>
+      <div><dt class="text-secondary-500">Actual Date</dt><dd class="font-medium mt-1">{{ item.actual_date.strftime('%Y-%m-%d') if item.actual_date else '—' }}</dd></div>
+      <div><dt class="text-secondary-500">Created</dt><dd class="font-medium mt-1">{{ item.created_at.strftime('%Y-%m-%d %H:%M') }}</dd></div>
+      <div><dt class="text-secondary-500">Updated</dt><dd class="font-medium mt-1">{{ item.updated_at.strftime('%Y-%m-%d %H:%M') }}</dd></div>
+    </dl>
+  </div>
+
+  <!-- Features JSON as bulleted list -->
+  {% if item.features %}
+  <div class="bg-white rounded-lg border p-6">
+    <h3 class="text-sm font-semibold text-secondary-700 mb-3">Features</h3>
+    <ul class="space-y-2">
+      {% for feat in item.features %}
+      <li class="flex items-start gap-2 text-sm">
+        <span class="text-primary-500 mt-0.5">&#8226;</span>
+        <span class="text-secondary-700">{{ feat.title if feat.title is defined else feat }}</span>
+        {% if feat.description is defined and feat.description %}<span class="text-secondary-400 text-xs ml-2">— {{ feat.description }}</span>{% endif %}
+      </li>
+      {% endfor %}
+    </ul>
+  </div>
+  {% endif %}
+
+  <!-- Release Notes -->
+  {% if item.release_notes %}
+  <div class="bg-white rounded-lg border p-6">
+    <h3 class="text-sm font-semibold text-secondary-700 mb-3">Release Notes</h3>
+    <p class="text-sm text-secondary-600 whitespace-pre-line">{{ item.release_notes }}</p>
+  </div>
+  {% endif %}
+
+  <!-- Delete Confirm -->
+  <div x-show="showDelete" x-cloak class="fixed inset-0 z-50 flex items-center justify-center">
+    <div class="fixed inset-0 bg-black/50" @click="showDelete = false"></div>
+    <div class="relative bg-white rounded-xl shadow-xl w-full max-w-sm mx-4 p-6 text-center">
+      <h3 class="text-lg font-semibold mb-2">Delete Release?</h3>
+      <p class="text-secondary-500 text-sm mb-4">This will soft-delete {{ item.code }}. This action can be undone later.</p>
+      <div class="flex justify-center gap-2">
+        <button @click="showDelete = false" class="px-4 py-2 text-secondary-600 text-sm rounded-lg hover:bg-secondary-50">Cancel</button>
+        <form method="post" action="/development/releases/{{ item.id }}/delete" class="inline">
+          <button type="submit" class="px-4 py-2 bg-red-600 text-white text-sm rounded-lg hover:bg-red-700">Delete</button>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

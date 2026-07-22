@@ -20,6 +20,9 @@ from app.core.database import Base, async_session_factory, dispose_engine, get_e
 from app.web.routes.auth import router as web_auth_router
 from app.web.routes.dashboard import router as web_dashboard_router
 from app.web.routes.quality import router as web_quality_router
+from app.web.routes.strategic import router as web_strategic_router
+from app.web.routes.commercial import router as web_commercial_router
+from app.web.routes.tech_dev import router as web_tech_dev_router
 from app.modules.commercial_sales.router import router as commercial_router
 from app.modules.pmo_projects.router import router as pmo_projects_router
 from app.modules.training_services.router import router as training_router
@@ -88,6 +91,9 @@ app.include_router(auth_router)
 app.include_router(web_auth_router)  # Login/logout HTML routes
 app.include_router(web_dashboard_router)  # Dashboard HTML route
 app.include_router(web_quality_router)  # Quality Management HTML routes
+app.include_router(web_strategic_router)  # Strategic Planning HTML routes
+app.include_router(web_commercial_router)  # Commercial Sales HTML routes
+app.include_router(web_tech_dev_router)  # Tech Development HTML routes
 app.include_router(quality_router, prefix="/api/v1/quality", tags=["Quality Management — P2"])
 app.include_router(commercial_router, prefix="/api/v1/commercial", tags=["Commercial Sales — P3"])
 app.include_router(strategic_router, prefix="/api/v1/strategic", tags=["Strategic Management — P1"])

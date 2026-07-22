@@ -1,0 +1,48 @@
+{% extends "base.html" %}
+{% from 'macros.html' import status_badge %}
+{% block title %}ICP — {{ item.industry }}{% endblock %}
+{% block page_title %}ICP — {{ item.industry }}{% endblock %}
+
+{% block content %}
+<div class="space-y-6">
+  <!-- Header -->
+  <div class="flex items-start justify-between">
+    <div>
+      <p class="text-secondary-500 text-sm">{{ item.company_size }} | {{ item.role }}</p>
+      <h2 class="text-xl font-bold text-gray-900 mt-1">{{ item.industry }}</h2>
+    </div>
+    <div class="flex items-center gap-2">
+      {% if item.is_active %}
+      <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-emerald-100 text-emerald-700">Active</span>
+      {% else %}
+      <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-secondary-100 text-secondary-600">Inactive</span>
+      {% endif %}
+    </div>
+  </div>
+
+  <!-- Details grid -->
+  <div class="bg-white rounded-lg border p-6">
+    <dl class="grid grid-cols-2 gap-4 text-sm">
+      <div><dt class="text-secondary-500">Industry</dt><dd class="font-medium mt-1">{{ item.industry }}</dd></div>
+      <div><dt class="text-secondary-500">Company Size</dt><dd class="font-medium mt-1">{{ item.company_size }}</dd></div>
+      <div><dt class="text-secondary-500">Target Role</dt><dd class="font-medium mt-1">{{ item.role }}</dd></div>
+      <div>
+        <dt class="text-secondary-500">Fit Score</dt>
+        <dd class="font-medium mt-1 flex items-center gap-2">
+          <span class="w-24 bg-secondary-100 rounded-full h-2">
+            <span class="bg-primary-500 h-2 rounded-full block" style="width: {{ item.fit_score }}%"></span>
+          </span>
+          {{ item.fit_score }}/100
+        </dd>
+      </div>
+      <div class="col-span-2">
+        <dt class="text-secondary-500">Pain Points</dt>
+        <dd class="font-medium mt-1 whitespace-pre-wrap">{{ item.pain_points }}</dd>
+      </div>
+    </dl>
+  </div>
+
+  <!-- Back link -->
+  <a href="/commercial/icp" class="text-sm text-primary-600 hover:text-primary-800">&larr; Back to ICP Matrix</a>
+</div>
+{% endblock %}

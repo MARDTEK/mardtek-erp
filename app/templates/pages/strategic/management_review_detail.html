@@ -1,0 +1,47 @@
+{% extends "base.html" %}
+{% block title %}{{ item.code }} — Management Reviews{% endblock %}
+{% block page_title %}Management Review {{ item.code }}{% endblock %}
+
+{% block content %}
+<div class="space-y-6">
+  <!-- Header -->
+  <div>
+    <a href="/strategic/management-reviews" class="text-sm text-primary-600 hover:text-primary-800">&larr; Management Reviews</a>
+    <h2 class="text-xl font-bold text-gray-900 mt-1">{{ item.title }}</h2>
+    <p class="text-secondary-500 text-sm mt-1">{{ item.code }} | Prepared by {{ item.prepared_by }}</p>
+  </div>
+
+  <!-- Review Period -->
+  <div class="bg-white rounded-lg border p-6">
+    <dl class="grid grid-cols-2 gap-4 text-sm">
+      <div><dt class="text-secondary-500">Review Period Start</dt><dd class="font-medium mt-1">{{ item.review_period_start.strftime('%Y-%m-%d') if item.review_period_start else '—' }}</dd></div>
+      <div><dt class="text-secondary-500">Review Period End</dt><dd class="font-medium mt-1">{{ item.review_period_end.strftime('%Y-%m-%d') if item.review_period_end else '—' }}</dd></div>
+      <div><dt class="text-secondary-500">Created</dt><dd class="font-medium mt-1">{{ item.created_at.strftime('%Y-%m-%d %H:%M') }}</dd></div>
+      <div><dt class="text-secondary-500">Report URL</dt><dd class="font-medium mt-1">{% if item.report_url %}<a href="{{ item.report_url }}" target="_blank" class="text-primary-600 hover:text-primary-800">View Report</a>{% else %}—{% endif %}</dd></div>
+    </dl>
+  </div>
+
+  <!-- Summary -->
+  <div class="bg-white rounded-lg border p-6">
+    <h3 class="text-sm font-medium text-secondary-500 mb-2">Summary</h3>
+    <p class="whitespace-pre-wrap text-secondary-800">{{ item.summary }}</p>
+  </div>
+
+  <!-- Conclusions -->
+  {% if item.conclusions %}
+  <div class="bg-white rounded-lg border p-6">
+    <h3 class="text-sm font-medium text-secondary-500 mb-2">Conclusions</h3>
+    {% if item.conclusions is mapping %}
+      {% for key, value in item.conclusions.items() %}
+      <div class="mb-2">
+        <span class="font-medium text-secondary-700">{{ key }}:</span>
+        <span class="text-secondary-600">{{ value }}</span>
+      </div>
+      {% endfor %}
+    {% else %}
+      <p class="whitespace-pre-wrap text-secondary-800">{{ item.conclusions }}</p>
+    {% endif %}
+  </div>
+  {% endif %}
+</div>
+{% endblock %}

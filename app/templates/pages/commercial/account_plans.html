@@ -1,0 +1,48 @@
+{% extends "base.html" %}
+{% from 'macros.html' import status_badge %}
+{% block title %}Account Plans — {{ contract.contract_number }}{% endblock %}
+{% block page_title %}Account Plans — {{ contract.contract_number }}{% endblock %}
+
+{% block content %}
+<div class="space-y-4">
+  <div class="flex items-center justify-between">
+    <p class="text-sm text-secondary-500">{{ items | length }} plan{{ 's' if items | length != 1 }}</p>
+    <a href="/commercial/contracts/{{ contract.id }}/account-plans/create"
+       class="px-4 py-2 bg-primary-600 text-white rounded-lg text-sm font-medium hover:bg-primary-700 transition-colors">
+      + New Account Plan
+    </a>
+  </div>
+
+  {% if items %}
+  <div class="bg-white rounded-lg border overflow-hidden">
+    <table class="min-w-full divide-y divide-gray-200">
+      <thead class="bg-gray-50">
+        <tr>
+          <th class="px-4 py-3 text-left text-xs font-semibold text-secondary-600">ID</th>
+          <th class="px-4 py-3 text-left text-xs font-semibold text-secondary-600">Goals</th>
+          <th class="px-4 py-3 text-left text-xs font-semibold text-secondary-600">Review Date</th>
+          <th class="px-4 py-3 text-left text-xs font-semibold text-secondary-600">Created</th>
+        </tr>
+      </thead>
+      <tbody class="divide-y divide-gray-100">
+        {% for item in items %}
+        <tr class="hover:bg-gray-50 cursor-pointer transition-colors"
+            onclick="window.location='/commercial/account-plans/{{ item.id }}'">
+          <td class="px-4 py-3 text-sm font-medium text-primary-600">#{{ item.id }}</td>
+          <td class="px-4 py-3 text-sm text-secondary-700">{{ item.goals[:80] }}{{ '...' if item.goals | length > 80 }}</td>
+          <td class="px-4 py-3 text-sm text-secondary-500">{{ item.review_date.strftime('%Y-%m-%d') if item.review_date else '—' }}</td>
+          <td class="px-4 py-3 text-sm text-secondary-500">{{ item.created_at.strftime('%Y-%m-%d') }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+  <div class="text-center py-12 text-secondary-400 bg-white rounded-lg border">
+    <p class="text-sm">No account plans yet.</p>
+  </div>
+  {% endif %}
+
+  <a href="/commercial/contracts/{{ contract.id }}" class="text-sm text-primary-600 hover:text-primary-800">&larr; Back to Contract</a>
+</div>
+{% endblock %}

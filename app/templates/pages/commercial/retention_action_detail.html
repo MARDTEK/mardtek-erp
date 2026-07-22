@@ -1,0 +1,36 @@
+{% extends "base.html" %}
+{% from 'macros.html' import status_badge %}
+{% block title %}Retention Action — {{ item.action_type }}{% endblock %}
+{% block page_title %}Retention Action — {{ item.action_type }}{% endblock %}
+
+{% block content %}
+<div class="space-y-6">
+  <!-- Header -->
+  <div class="flex items-start justify-between">
+    <div>
+      <p class="text-secondary-500 text-sm">Subscription #{{ item.subscription_id }}</p>
+      <h2 class="text-xl font-bold text-gray-900 mt-1">{{ item.action_type | title }}</h2>
+    </div>
+    <div class="flex items-center gap-2">
+      {{ status_badge(item.status) }}
+    </div>
+  </div>
+
+  <!-- Details grid -->
+  <div class="bg-white rounded-lg border p-6">
+    <dl class="grid grid-cols-2 gap-4 text-sm">
+      <div class="col-span-2">
+        <dt class="text-secondary-500">Description</dt>
+        <dd class="font-medium mt-1 whitespace-pre-wrap">{{ item.description }}</dd>
+      </div>
+      <div><dt class="text-secondary-500">Assigned To</dt><dd class="font-medium mt-1">{{ item.assigned_to }}</dd></div>
+      <div><dt class="text-secondary-500">Deadline</dt><dd class="font-medium mt-1">{{ item.deadline.strftime('%Y-%m-%d') if item.deadline else '—' }}</dd></div>
+      <div><dt class="text-secondary-500">Completed At</dt><dd class="font-medium mt-1">{{ item.completed_at.strftime('%Y-%m-%d %H:%M') if item.completed_at else '—' }}</dd></div>
+      <div><dt class="text-secondary-500">Created</dt><dd class="font-medium mt-1">{{ item.created_at.strftime('%Y-%m-%d %H:%M') }}</dd></div>
+    </dl>
+  </div>
+
+  <!-- Back link -->
+  <a href="/commercial/subscriptions/{{ item.subscription_id }}/retention" class="text-sm text-primary-600 hover:text-primary-800">&larr; Back to Retention Actions</a>
+</div>
+{% endblock %}

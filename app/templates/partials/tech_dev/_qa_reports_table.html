@@ -1,0 +1,39 @@
+{% from 'macros.html' import status_badge, pagination %}
+
+{% if items %}
+<div class="bg-white rounded-lg border overflow-hidden">
+  <table class="min-w-full divide-y divide-gray-200">
+    <thead class="bg-gray-50">
+      <tr>
+        <th class="px-4 py-3 text-left text-xs font-semibold text-secondary-600">Code</th>
+        <th class="px-4 py-3 text-left text-xs font-semibold text-secondary-600">Title</th>
+        <th class="px-4 py-3 text-left text-xs font-semibold text-secondary-600">Test Type</th>
+        <th class="px-4 py-3 text-left text-xs font-semibold text-secondary-600">Tests</th>
+        <th class="px-4 py-3 text-left text-xs font-semibold text-secondary-600">Pass Rate</th>
+        <th class="px-4 py-3 text-left text-xs font-semibold text-secondary-600">Status</th>
+      </tr>
+    </thead>
+    <tbody class="divide-y divide-gray-100">
+      {% for item in items %}
+      <tr class="hover:bg-gray-50 transition-colors cursor-pointer" onclick="window.location='/development/qa-reports/{{ item.id }}'">
+        <td class="px-4 py-3 text-sm">
+          <span class="text-primary-600 font-medium">{{ item.code }}</span>
+        </td>
+        <td class="px-4 py-3 text-sm text-secondary-700">{{ item.title }}</td>
+        <td class="px-4 py-3 text-sm text-secondary-500">{{ item.test_type }}</td>
+        <td class="px-4 py-3 text-sm text-secondary-500">{{ item.total_tests }}</td>
+        <td class="px-4 py-3 text-sm text-secondary-500">
+          {% if item.total_tests > 0 %}{{ ((item.passed / item.total_tests) * 100) | round(1) }}%{% else %}—{% endif %}
+        </td>
+        <td class="px-4 py-3">{{ status_badge(item.status) }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{{ pagination(page, total_pages, '/development/qa-reports', search) }}
+{% else %}
+<div class="text-center py-12 text-secondary-400">
+  <p class="text-sm">No QA reports found.</p>
+</div>
+{% endif %}

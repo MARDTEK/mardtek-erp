@@ -1,0 +1,38 @@
+{% from 'macros.html' import status_badge, pagination %}
+
+{% if items %}
+<div class="bg-white rounded-lg border overflow-hidden">
+  <table class="min-w-full divide-y divide-gray-200">
+    <thead class="bg-gray-50">
+      <tr>
+        <th class="px-4 py-3 text-left text-xs font-semibold text-secondary-600">Company</th>
+        <th class="px-4 py-3 text-left text-xs font-semibold text-secondary-600">Contact</th>
+        <th class="px-4 py-3 text-left text-xs font-semibold text-secondary-600">Email</th>
+        <th class="px-4 py-3 text-left text-xs font-semibold text-secondary-600">Source</th>
+        <th class="px-4 py-3 text-left text-xs font-semibold text-secondary-600">Product</th>
+        <th class="px-4 py-3 text-left text-xs font-semibold text-secondary-600">Value</th>
+        <th class="px-4 py-3 text-left text-xs font-semibold text-secondary-600">Status</th>
+      </tr>
+    </thead>
+    <tbody class="divide-y divide-gray-100">
+      {% for item in items %}
+      <tr class="hover:bg-gray-50 cursor-pointer transition-colors"
+          onclick="window.location='/commercial/leads/{{ item.id }}'">
+        <td class="px-4 py-3 text-sm font-medium text-primary-600">{{ item.company }}</td>
+        <td class="px-4 py-3 text-sm text-secondary-700">{{ item.contact_name }}</td>
+        <td class="px-4 py-3 text-sm text-secondary-500">{{ item.contact_email }}</td>
+        <td class="px-4 py-3 text-sm text-secondary-500">{{ item.source }}</td>
+        <td class="px-4 py-3 text-sm text-secondary-500">{{ item.product_line }}</td>
+        <td class="px-4 py-3 text-sm text-secondary-700">{{ '${:,.2f}'.format(item.estimated_value) if item.estimated_value else '—' }}</td>
+        <td class="px-4 py-3">{{ status_badge(item.status.value if item.status.value is defined else item.status) }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{{ pagination(page, total_pages, '/commercial/leads', search) }}
+{% else %}
+<div class="text-center py-12 text-secondary-400">
+  <p class="text-sm">No leads found.</p>
+</div>
+{% endif %}

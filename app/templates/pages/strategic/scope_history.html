@@ -1,0 +1,60 @@
+{% extends "base.html" %}
+{% from 'macros.html' import status_badge, pagination %}
+{% block title %}QMS Scope History — Strategic Planning{% endblock %}
+{% block page_title %}QMS Scope History{% endblock %}
+
+{% block content %}
+<div class="space-y-4">
+  <div class="flex items-center justify-between">
+    <div>
+      <a href="/strategic/scope" class="text-sm text-primary-600 hover:text-primary-800">&larr; Current Scope</a>
+      <p class="text-sm text-secondary-500 mt-1">{{ total }} version{{ 's' if total != 1 }}</p>
+    </div>
+    <a href="/strategic/scope/create"
+       class="px-4 py-2 bg-primary-600 text-white rounded-lg text-sm font-medium hover:bg-primary-700 transition-colors">
+      + New Version
+    </a>
+  </div>
+
+  {% if items %}
+  <div class="bg-white rounded-lg border overflow-hidden">
+    <table class="min-w-full divide-y divide-gray-200">
+      <thead class="bg-gray-50">
+        <tr>
+          <th class="px-4 py-3 text-left text-xs font-semibold text-secondary-600">Version</th>
+          <th class="px-4 py-3 text-left text-xs font-semibold text-secondary-600">Scope Description</th>
+          <th class="px-4 py-3 text-left text-xs font-semibold text-secondary-600">Status</th>
+          <th class="px-4 py-3 text-left text-xs font-semibold text-secondary-600">Created</th>
+        </tr>
+      </thead>
+      <tbody class="divide-y divide-gray-100">
+        {% for item in items %}
+        <tr class="hover:bg-gray-50 transition-colors">
+          <td class="px-4 py-3 text-sm">
+            <a href="/strategic/scope" class="text-primary-600 hover:text-primary-800 font-medium">v{{ item.version }}</a>
+          </td>
+          <td class="px-4 py-3 text-sm text-secondary-700 max-w-md truncate">{{ item.scope_description }}</td>
+          <td class="px-4 py-3">
+            {% if item.is_current %}
+              <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-emerald-100 text-emerald-700">Current</span>
+            {% else %}
+              <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-secondary-100 text-secondary-600">Archived</span>
+            {% endif %}
+          </td>
+          <td class="px-4 py-3 text-sm text-secondary-500">{{ item.created_at.strftime('%Y-%m-%d') }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {{ pagination(page, total_pages, '/strategic/scope/history') }}
+  {% else %}
+  <div class="text-center py-12 text-secondary-400">
+    <svg class="mx-auto h-12 w-12 mb-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+    </svg>
+    <p class="text-sm">No scope versions found.</p>
+  </div>
+  {% endif %}
+</div>
+{% endblock %}

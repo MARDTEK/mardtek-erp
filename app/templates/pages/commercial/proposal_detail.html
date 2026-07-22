@@ -1,0 +1,69 @@
+{% extends "base.html" %}
+{% from 'macros.html' import status_badge %}
+{% block title %}Proposal v{{ item.version }} — Proposals{% endblock %}
+{% block page_title %}Proposal v{{ item.version }}{% endblock %}
+
+{% block content %}
+<div class="space-y-6">
+  <!-- Header -->
+  <div class="flex items-start justify-between">
+    <div>
+      <p class="text-secondary-500 text-sm">Created by {{ item.created_by }}</p>
+      <h2 class="text-xl font-bold text-gray-900 mt-1">Proposal v{{ item.version }}</h2>
+      <p class="text-lg font-semibold text-primary-600 mt-1">{{ '${:,.2f}'.format(item.total_amount) }}</p>
+    </div>
+    <div class="flex items-center gap-2">
+      {{ status_badge(item.status.value if item.status.value is defined else item.status) }}
+      {% if item.status.value == 'draft' %}
+      <form method="post" action="/commercial/proposals/{{ item.id }}/accept" class="inline">
+        <button type="submit" class="px-3 py-1.5 bg-emerald-600 text-white text-xs rounded-lg hover:bg-emerald-700">Accept</button>
+      </form>
+      {% endif %}
+    </div>
+  </div>
+
+  <!-- Details grid -->
+  <div class="bg-white rounded-lg border p-6">
+    <dl class="grid grid-cols-2 gap-4 text-sm">
+      <div><dt class="text-secondary-500">Valid Until</dt><dd class="font-medium mt-1">{{ item.valid_until.strftime('%Y-%m-%d') if item.valid_until else '—' }}</dd></div>
+      <div><dt class="text-secondary-500">Status</dt><dd class="font-medium mt-1">{{ (item.status.value if item.status.value is defined else item.status) | replace('_', ' ') | title }}</dd></div>
+      <div><dt class="text-secondary-500">Sent At</dt><dd class="font-medium mt-1">{{ item.sent_at.strftime('%Y-%m-%d %H:%M') if item.sent_at else '—' }}</dd></div>
+      <div><dt class="text-secondary-500">Accepted At</dt><dd class="font-medium mt-1">{{ item.accepted_at.strftime('%Y-%m-%d %H:%M') if item.accepted_at else '—' }}</dd></div>
+      <div class="col-span-2"><dt class="text-secondary-500">Rejection Reason</dt><dd class="font-medium mt-1">{{ item.rejection_reason or '—' }}</dd></div>
+      <div><dt class="text-secondary-500">Created</dt><dd class="font-medium mt-1">{{ item.created_at.strftime('%Y-%m-%d %H:%M') }}</dd></div>
+    </dl>
+  </div>
+
+  <!-- Line items -->
+  {% if item.lines %}
+  <div class="bg-white rounded-lg border overflow-hidden">
+    <div class="px-4 py-3 bg-gray-50 border-b">
+      <h3 class="text-sm font-semibold text-secondary-700">Line Items</h3>
+    </div>
+    <table class="min-w-full divide-y divide-gray-200">
+      <thead>
+        <tr>
+          <th class="px-4 py-2 text-left text-xs font-semibold text-secondary-600">Description</th>
+          <th class="px-4 py-2 text-right text-xs font-semibold text-secondary-600">Qty</th>
+          <th class="px-4 py-2 text-right text-xs font-semibold text-secondary-600">Unit Price</th>
+          <th class="px-4 py-2 text-right text-xs font-semibold text-secondary-600">Total</th>
+        </tr>
+      </thead>
+      <tbody class="divide-y divide-gray-100">
+        {% for line in item.lines %}
+        <tr>
+          <td class="px-4 py-2 text-sm text-secondary-700">{{ line.description }}</td>
+          <td class="px-4 py-2 text-sm text-secondary-500 text-right">{{ line.qty }}</td>
+          <td class="px-4 py-2 text-sm text-secondary-500 text-right">{{ '${:,.2f}'.format(line.unit_price) }}</td>
+          <td class="px-4 py-2 text-sm text-secondary-700 text-right font-medium">{{ '${:,.2f}'.format(line.total) }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% endif %}
+
+  <!-- Back link -->
+  <a href="/commercial/leads" class="text-sm text-primary-600 hover:text-primary-800">&larr; Back to Leads</a>
+</div>
+{% endblock %}

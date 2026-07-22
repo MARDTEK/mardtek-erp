@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+{% from 'macros.html' import status_badge, pagination, search_form, empty_state %}
+{% block title %}Contracts — Commercial Sales{% endblock %}
+{% block page_title %}Contracts{% endblock %}
+
+{% block content %}
+<div class="space-y-4">
+  <div class="flex items-center justify-between">
+    <p class="text-sm text-secondary-500">{{ total }} contract{{ 's' if total != 1 }}</p>
+    <div class="flex items-center gap-2">
+      <a href="/commercial/leads"
+         class="px-4 py-2 border border-secondary-200 text-secondary-700 rounded-lg text-sm font-medium hover:bg-secondary-50 transition-colors">
+        Leads
+      </a>
+      <a href="/commercial/icp"
+         class="px-4 py-2 border border-secondary-200 text-secondary-700 rounded-lg text-sm font-medium hover:bg-secondary-50 transition-colors">
+        ICP Matrix
+      </a>
+    </div>
+  </div>
+
+  {{ search_form('/commercial/contracts', search) }}
+
+  <div id="table-container"
+       hx-get="/commercial/contracts/table?page={{ page }}{% if search %}&search={{ search }}{% endif %}{% if contract_type %}&contract_type={{ contract_type }}{% endif %}{% if status %}&status={{ status }}{% endif %}"
+       hx-trigger="load"
+       hx-swap="innerHTML">
+    <div class="animate-pulse text-secondary-400 text-sm py-8 text-center">Loading contracts...</div>
+  </div>
+</div>
+{% endblock %}

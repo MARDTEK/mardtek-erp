@@ -1,0 +1,29 @@
+{% extends "base.html" %}
+{% from 'macros.html' import status_badge, pagination, search_form, empty_state %}
+{% block title %}Quality Policies — Strategic Planning{% endblock %}
+{% block page_title %}Quality Policies{% endblock %}
+
+{% block content %}
+<div class="space-y-4" x-data="{showCreate:false}">
+  <div class="flex items-center justify-between">
+    <div>
+      <p class="text-sm text-secondary-500">{{ total }} polic{{ 'y' if total == 1 else 'ies' }}</p>
+    </div>
+    <a href="/strategic/policies/create"
+       class="px-4 py-2 bg-primary-600 text-white rounded-lg text-sm font-medium hover:bg-primary-700 transition-colors">
+      + New Policy
+    </a>
+  </div>
+
+  {{ search_form('/strategic/policies', search) }}
+
+  <div id="table-container"
+       hx-get="/strategic/policies/table?page={{ page }}{% if search %}&search={{ search }}{% endif %}{% if status %}&status={{ status }}{% endif %}"
+       hx-trigger="load"
+       hx-swap="innerHTML">
+    <div class="animate-pulse text-secondary-400 text-sm py-8 text-center">Loading policies...</div>
+  </div>
+
+  {{ pagination(page, total_pages, '/strategic/policies', search) }}
+</div>
+{% endblock %}

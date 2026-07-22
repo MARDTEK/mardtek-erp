@@ -1,0 +1,35 @@
+{% extends "base.html" %}
+{% from 'macros.html' import status_badge, pagination, search_form, empty_state %}
+{% block title %}ICP Matrix — Commercial Sales{% endblock %}
+{% block page_title %}ICP Matrix{% endblock %}
+
+{% block content %}
+<div class="space-y-4">
+  <div class="flex items-center justify-between">
+    <p class="text-sm text-secondary-500">{{ total }} profile{{ 's' if total != 1 }}</p>
+    <div class="flex items-center gap-2">
+      <a href="/commercial/leads"
+         class="px-4 py-2 border border-secondary-200 text-secondary-700 rounded-lg text-sm font-medium hover:bg-secondary-50 transition-colors">
+        Leads
+      </a>
+      <a href="/commercial/contracts"
+         class="px-4 py-2 border border-secondary-200 text-secondary-700 rounded-lg text-sm font-medium hover:bg-secondary-50 transition-colors">
+        Contracts
+      </a>
+      <a href="/commercial/icp/create"
+         class="px-4 py-2 bg-primary-600 text-white rounded-lg text-sm font-medium hover:bg-primary-700 transition-colors">
+        + New ICP Profile
+      </a>
+    </div>
+  </div>
+
+  {{ search_form('/commercial/icp', search) }}
+
+  <div id="table-container"
+       hx-get="/commercial/icp/table?page={{ page }}{% if search %}&search={{ search }}{% endif %}{% if industry %}&industry={{ industry }}{% endif %}"
+       hx-trigger="load"
+       hx-swap="innerHTML">
+    <div class="animate-pulse text-secondary-400 text-sm py-8 text-center">Loading ICP profiles...</div>
+  </div>
+</div>
+{% endblock %}

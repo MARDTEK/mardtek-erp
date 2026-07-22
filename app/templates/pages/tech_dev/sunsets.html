@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+{% from 'macros.html' import status_badge, pagination, search_form, empty_state %}
+{% block title %}Solution Sunsets — Tech Development{% endblock %}
+{% block page_title %}Solution Sunsets{% endblock %}
+
+{% block content %}
+<div class="space-y-4">
+  <div class="flex items-center justify-between">
+    <div>
+      <p class="text-sm text-secondary-500">{{ total }} sunset{{ 's' if total != 1 }}</p>
+    </div>
+    <a href="/development/sunsets/create"
+       class="px-4 py-2 bg-primary-600 text-white rounded-lg text-sm font-medium hover:bg-primary-700 transition-colors">
+      + New Sunset
+    </a>
+  </div>
+
+  {{ search_form('/development/sunsets', search) }}
+
+  <div id="table-container"
+       hx-get="/development/sunsets/table?page={{ page }}{% if search %}&search={{ search }}{% endif %}"
+       hx-trigger="load"
+       hx-swap="innerHTML">
+    <div class="animate-pulse text-secondary-400 text-sm py-8 text-center">Loading sunsets...</div>
+  </div>
+</div>
+{% endblock %}

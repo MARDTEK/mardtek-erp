@@ -1,0 +1,62 @@
+{% extends "base.html" %}
+{% block title %}QMS Scope — Strategic Planning{% endblock %}
+{% block page_title %}QMS Scope{% endblock %}
+
+{% block content %}
+<div class="space-y-6">
+  <!-- Header -->
+  <div class="flex items-start justify-between">
+    <div>
+      <h2 class="text-xl font-bold text-gray-900">QMS Scope</h2>
+      <p class="text-secondary-500 text-sm mt-1">Current version: v{{ item.version }}</p>
+    </div>
+    <div class="flex items-center gap-2">
+      <a href="/strategic/scope/history"
+         class="px-4 py-2 border border-secondary-200 text-secondary-700 text-sm rounded-lg hover:bg-secondary-50">
+        View History
+      </a>
+      <a href="/strategic/scope/create"
+         class="px-4 py-2 bg-primary-600 text-white text-sm rounded-lg hover:bg-primary-700">
+        New Version
+      </a>
+    </div>
+  </div>
+
+  <!-- Scope Description -->
+  <div class="bg-white rounded-lg border p-6">
+    <h3 class="text-sm font-medium text-secondary-500 mb-2">Scope Description</h3>
+    <p class="whitespace-pre-wrap text-secondary-800">{{ item.scope_description }}</p>
+  </div>
+
+  <!-- Exclusions -->
+  {% if item.exclusions %}
+  <div class="bg-white rounded-lg border p-6">
+    <h3 class="text-sm font-medium text-secondary-500 mb-2">Exclusions</h3>
+    <p class="whitespace-pre-wrap text-secondary-800">{{ item.exclusions }}</p>
+  </div>
+  {% endif %}
+
+  <!-- Applicable Normative References -->
+  <div class="bg-white rounded-lg border p-6">
+    <h3 class="text-sm font-medium text-secondary-500 mb-2">Applicable Normative References</h3>
+    <p class="whitespace-pre-wrap text-secondary-800">{{ item.applicable_normative }}</p>
+  </div>
+
+  <!-- Details grid -->
+  <div class="bg-white rounded-lg border p-6">
+    <dl class="grid grid-cols-2 gap-4 text-sm">
+      <div><dt class="text-secondary-500">Version</dt><dd class="font-medium mt-1">v{{ item.version }}</dd></div>
+      <div><dt class="text-secondary-500">Status</dt><dd class="font-medium mt-1">
+        {% if item.is_current %}
+          <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-emerald-100 text-emerald-700">Current</span>
+        {% else %}
+          <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-secondary-100 text-secondary-600">Archived</span>
+        {% endif %}
+      </dd></div>
+      <div><dt class="text-secondary-500">Approved By</dt><dd class="font-medium mt-1">{{ item.approved_by or '—' }}</dd></div>
+      <div><dt class="text-secondary-500">Approved At</dt><dd class="font-medium mt-1">{{ item.approved_at.strftime('%Y-%m-%d') if item.approved_at else '—' }}</dd></div>
+      <div><dt class="text-secondary-500">Created</dt><dd class="font-medium mt-1">{{ item.created_at.strftime('%Y-%m-%d %H:%M') }}</dd></div>
+    </dl>
+  </div>
+</div>
+{% endblock %}

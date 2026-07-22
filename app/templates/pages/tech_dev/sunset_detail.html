@@ -1,0 +1,74 @@
+{% extends "base.html" %}
+{% from 'macros.html' import status_badge %}
+{% block title %}{{ item.code }} — Sunsets{% endblock %}
+{% block page_title %}Sunset {{ item.code }}{% endblock %}
+
+{% block content %}
+<div class="space-y-6" x-data="{showDelete:false}">
+  <!-- Header -->
+  <div class="flex items-start justify-between">
+    <div>
+      <p class="text-secondary-500 text-sm">{{ item.product }}</p>
+      <h2 class="text-xl font-bold text-gray-900 mt-1">{{ item.code }}</h2>
+    </div>
+    <div class="flex items-center gap-2">
+      {{ status_badge(item.status) }}
+      {% if item.status == 'planned' %}
+      <form method="post" action="/development/sunsets/{{ item.id }}/start" class="inline">
+        <button type="submit" class="px-3 py-1.5 bg-sky-600 text-white text-xs rounded-lg hover:bg-sky-700">Start Migration</button>
+      </form>
+      {% elif item.status == 'in_progress' %}
+      <form method="post" action="/development/sunsets/{{ item.id }}/complete" class="inline">
+        <button type="submit" class="px-3 py-1.5 bg-emerald-600 text-white text-xs rounded-lg hover:bg-emerald-700">Complete</button>
+      </form>
+      {% endif %}
+      <a href="/development/sunsets/{{ item.id }}/edit" class="px-3 py-1.5 border border-secondary-200 text-secondary-700 text-xs rounded-lg hover:bg-secondary-50">Edit</a>
+      {% if item.is_deleted %}
+      <form method="post" action="/development/sunsets/{{ item.id }}/restore" class="inline">
+        <button type="submit" class="px-3 py-1.5 bg-amber-600 text-white text-xs rounded-lg hover:bg-amber-700">Restore</button>
+      </form>
+      {% else %}
+      <button @click="showDelete = true" class="px-3 py-1.5 border border-red-200 text-red-600 text-xs rounded-lg hover:bg-red-50">Delete</button>
+      {% endif %}
+    </div>
+  </div>
+
+  {% if item.is_deleted %}
+  <div class="bg-red-50 border border-red-200 rounded-lg p-4 text-sm text-red-700">
+    This sunset has been soft-deleted.
+  </div>
+  {% endif %}
+
+  <!-- Details grid -->
+  <div class="bg-white rounded-lg border p-6">
+    <dl class="grid grid-cols-2 gap-4 text-sm">
+      <div><dt class="text-secondary-500">Product</dt><dd class="font-medium mt-1">{{ item.product }}</dd></div>
+      <div><dt class="text-secondary-500">Sunset Date</dt><dd class="font-medium mt-1">{{ item.sunset_date.strftime('%Y-%m-%d') if item.sunset_date else '—' }}</dd></div>
+      <div><dt class="text-secondary-500">Approved By</dt><dd class="font-medium mt-1">{{ item.approved_by }}</dd></div>
+      <div><dt class="text-secondary-500">Created</dt><dd class="font-medium mt-1">{{ item.created_at.strftime('%Y-%m-%d %H:%M') }}</dd></div>
+      <div><dt class="text-secondary-500">Updated</dt><dd class="font-medium mt-1">{{ item.updated_at.strftime('%Y-%m-%d %H:%M') }}</dd></div>
+    </dl>
+  </div>
+
+  <!-- Migration Path -->
+  <div class="bg-white rounded-lg border p-6">
+    <h3 class="text-sm font-semibold text-secondary-700 mb-3">Migration Path</h3>
+    <p class="text-sm text-secondary-600 whitespace-pre-line">{{ item.migration_path }}</p>
+  </div>
+
+  <!-- Delete Confirm -->
+  <div x-show="showDelete" x-cloak class="fixed inset-0 z-50 flex items-center justify-center">
+    <div class="fixed inset-0 bg-black/50" @click="showDelete = false"></div>
+    <div class="relative bg-white rounded-xl shadow-xl w-full max-w-sm mx-4 p-6 text-center">
+      <h3 class="text-lg font-semibold mb-2">Delete Sunset?</h3>
+      <p class="text-secondary-500 text-sm mb-4">This will soft-delete {{ item.code }}. This action can be undone later.</p>
+      <div class="flex justify-center gap-2">
+        <button @click="showDelete = false" class="px-4 py-2 text-secondary-600 text-sm rounded-lg hover:bg-secondary-50">Cancel</button>
+        <form method="post" action="/development/sunsets/{{ item.id }}/delete" class="inline">
+          <button type="submit" class="px-4 py-2 bg-red-600 text-white text-sm rounded-lg hover:bg-red-700">Delete</button>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

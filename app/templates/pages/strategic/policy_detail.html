@@ -1,0 +1,62 @@
+{% extends "base.html" %}
+{% from 'macros.html' import status_badge %}
+{% block title %}{{ item.code }} — Policies{% endblock %}
+{% block page_title %}Policy {{ item.code }}{% endblock %}
+
+{% block content %}
+<div class="space-y-6">
+  <!-- Header -->
+  <div class="flex items-start justify-between">
+    <div>
+      <a href="/strategic/policies" class="text-sm text-primary-600 hover:text-primary-800">&larr; Policies</a>
+      <h2 class="text-xl font-bold text-gray-900 mt-1">{{ item.title }}</h2>
+      <p class="text-secondary-500 text-sm mt-1">{{ item.code }} | v{{ item.version }}</p>
+    </div>
+    <div class="flex items-center gap-2">
+      {{ status_badge(item.status.value if item.status.value is defined else item.status) }}
+    </div>
+  </div>
+
+  <!-- Content -->
+  <div class="bg-white rounded-lg border p-6">
+    <h3 class="text-sm font-medium text-secondary-500 mb-2">Content</h3>
+    <p class="whitespace-pre-wrap text-secondary-800">{{ item.content }}</p>
+  </div>
+
+  <!-- Details grid -->
+  <div class="bg-white rounded-lg border p-6">
+    <dl class="grid grid-cols-2 gap-4 text-sm">
+      <div><dt class="text-secondary-500">Approved By</dt><dd class="font-medium mt-1">{{ item.approved_by or '—' }}</dd></div>
+      <div><dt class="text-secondary-500">Approved At</dt><dd class="font-medium mt-1">{{ item.approved_at.strftime('%Y-%m-%d') if item.approved_at else '—' }}</dd></div>
+      <div><dt class="text-secondary-500">Created</dt><dd class="font-medium mt-1">{{ item.created_at.strftime('%Y-%m-%d %H:%M') }}</dd></div>
+      <div><dt class="text-secondary-500">Updated</dt><dd class="font-medium mt-1">{{ item.updated_at.strftime('%Y-%m-%d %H:%M') }}</dd></div>
+    </dl>
+  </div>
+
+  <!-- Actions -->
+  {% set current_status = item.status.value if item.status.value is defined else item.status %}
+  {% if current_status == 'draft' %}
+  <div class="flex gap-2">
+    <form method="post" action="/strategic/policies/{{ item.id }}/review" class="inline">
+      <button type="submit" class="px-4 py-2 bg-amber-600 text-white text-sm rounded-lg hover:bg-amber-700">Send for Review</button>
+    </form>
+    <form method="post" action="/strategic/policies/{{ item.id }}/approve" class="inline">
+      <button type="submit" class="px-4 py-2 bg-emerald-600 text-white text-sm rounded-lg hover:bg-emerald-700">Approve</button>
+    </form>
+  </div>
+  {% elif current_status == 'reviewed' %}
+  <div class="flex gap-2">
+    <form method="post" action="/strategic/policies/{{ item.id }}/approve" class="inline">
+      <button type="submit" class="px-4 py-2 bg-emerald-600 text-white text-sm rounded-lg hover:bg-emerald-700">Approve</button>
+    </form>
+    <form method="post" action="/strategic/policies/{{ item.id }}/obsolete" class="inline">
+      <button type="submit" class="px-4 py-2 bg-red-600 text-white text-sm rounded-lg hover:bg-red-700">Reject</button>
+    </form>
+  </div>
+  {% elif current_status == 'approved' %}
+  <form method="post" action="/strategic/policies/{{ item.id }}/obsolete" class="inline">
+    <button type="submit" class="px-4 py-2 bg-red-600 text-white text-sm rounded-lg hover:bg-red-700">Mark Obsolete</button>
+  </form>
+  {% endif %}
+</div>
+{% endblock %}

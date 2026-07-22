@@ -1,0 +1,65 @@
+{% extends "base.html" %}
+{% from 'macros.html' import status_badge %}
+{% block title %}{{ item.company }} — Leads{% endblock %}
+{% block page_title %}Lead — {{ item.company }}{% endblock %}
+
+{% block content %}
+<div class="space-y-6">
+  <!-- Header -->
+  <div class="flex items-start justify-between">
+    <div>
+      <p class="text-secondary-500 text-sm">{{ item.source }} | {{ item.product_line }}</p>
+      <h2 class="text-xl font-bold text-gray-900 mt-1">{{ item.company }}</h2>
+      <p class="text-sm text-secondary-500 mt-1">{{ item.contact_name }} &mdash; {{ item.contact_email }}</p>
+    </div>
+    <div class="flex items-center gap-2">
+      {{ status_badge(item.status.value if item.status.value is defined else item.status) }}
+      {% if item.status.value in ('new', 'qualifying') %}
+      <form method="post" action="/commercial/leads/{{ item.id }}/qualify" class="inline">
+        <input type="hidden" name="icp_match_score" value="">
+        <button type="submit" class="px-3 py-1.5 bg-blue-600 text-white text-xs rounded-lg hover:bg-blue-700">Qualify</button>
+      </form>
+      {% endif %}
+      {% if item.status.value not in ('won', 'lost', 'disqualified') %}
+      <form method="post" action="/commercial/leads/{{ item.id }}/win" class="inline">
+        <button type="submit" class="px-3 py-1.5 bg-emerald-600 text-white text-xs rounded-lg hover:bg-emerald-700">Mark Won</button>
+      </form>
+      {% endif %}
+    </div>
+  </div>
+
+  <!-- Details grid -->
+  <div class="bg-white rounded-lg border p-6">
+    <dl class="grid grid-cols-2 gap-4 text-sm">
+      <div><dt class="text-secondary-500">Contact Phone</dt><dd class="font-medium mt-1">{{ item.contact_phone or '—' }}</dd></div>
+      <div><dt class="text-secondary-500">ICP Match Score</dt><dd class="font-medium mt-1">{{ item.icp_match_score if item.icp_match_score is not none else '—' }}</dd></div>
+      <div><dt class="text-secondary-500">Estimated Value</dt><dd class="font-medium mt-1">{{ '${:,.2f}'.format(item.estimated_value) if item.estimated_value else '—' }}</dd></div>
+      <div><dt class="text-secondary-500">Assigned To</dt><dd class="font-medium mt-1">{{ item.assigned_to or '—' }}</dd></div>
+      <div class="col-span-2"><dt class="text-secondary-500">Notes</dt><dd class="font-medium mt-1">{{ item.notes or '—' }}</dd></div>
+      <div><dt class="text-secondary-500">Created</dt><dd class="font-medium mt-1">{{ item.created_at.strftime('%Y-%m-%d %H:%M') }}</dd></div>
+      <div><dt class="text-secondary-500">Updated</dt><dd class="font-medium mt-1">{{ item.updated_at.strftime('%Y-%m-%d %H:%M') }}</dd></div>
+    </dl>
+  </div>
+
+  <!-- Related sections -->
+  <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+    <a href="/commercial/leads/{{ item.id }}/discovery"
+       class="bg-white rounded-lg border p-4 hover:border-primary-300 transition-colors">
+      <h3 class="text-sm font-semibold text-secondary-700">Discovery</h3>
+      <p class="text-xs text-secondary-500 mt-1">{{ 'Completed' if item.discovery else 'Not started' }}</p>
+    </a>
+    <a href="/commercial/leads/{{ item.id }}/proposals"
+       class="bg-white rounded-lg border p-4 hover:border-primary-300 transition-colors">
+      <h3 class="text-sm font-semibold text-secondary-700">Proposals</h3>
+      <p class="text-xs text-secondary-500 mt-1">{{ item.proposals | length }} proposal{{ 's' if item.proposals | length != 1 }}</p>
+    </a>
+    <div class="bg-white rounded-lg border p-4">
+      <h3 class="text-sm font-semibold text-secondary-700">Pipeline Stage</h3>
+      <p class="text-xs text-secondary-500 mt-1">{{ (item.status.value if item.status.value is defined else item.status) | replace('_', ' ') | title }}</p>
+    </div>
+  </div>
+
+  <!-- Back link -->
+  <a href="/commercial/leads" class="text-sm text-primary-600 hover:text-primary-800">&larr; Back to Leads</a>
+</div>
+{% endblock %}

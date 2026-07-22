@@ -1,0 +1,92 @@
+{% extends "base.html" %}
+{% from 'macros.html' import status_badge %}
+{% block title %}{{ item.code }} — Risk Matrices{% endblock %}
+{% block page_title %}Risk Matrix {{ item.code }}{% endblock %}
+
+{% block content %}
+<div class="space-y-6" x-data="{showDelete:false}">
+  <!-- Header -->
+  <div class="flex items-start justify-between">
+    <div>
+      <p class="text-secondary-500 text-sm">v{{ item.version }}</p>
+      <h2 class="text-xl font-bold text-gray-900 mt-1">{{ item.code }}</h2>
+    </div>
+    <div class="flex items-center gap-2">
+      <a href="/development/risk-matrices/{{ item.id }}/edit" class="px-3 py-1.5 border border-secondary-200 text-secondary-700 text-xs rounded-lg hover:bg-secondary-50">Edit</a>
+      {% if item.is_deleted %}
+      <form method="post" action="/development/risk-matrices/{{ item.id }}/restore" class="inline">
+        <button type="submit" class="px-3 py-1.5 bg-amber-600 text-white text-xs rounded-lg hover:bg-amber-700">Restore</button>
+      </form>
+      {% else %}
+      <button @click="showDelete = true" class="px-3 py-1.5 border border-red-200 text-red-600 text-xs rounded-lg hover:bg-red-50">Delete</button>
+      {% endif %}
+    </div>
+  </div>
+
+  {% if item.is_deleted %}
+  <div class="bg-red-50 border border-red-200 rounded-lg p-4 text-sm text-red-700">
+    This risk matrix has been soft-deleted.
+  </div>
+  {% endif %}
+
+  <!-- Details grid -->
+  <div class="bg-white rounded-lg border p-6">
+    <dl class="grid grid-cols-2 gap-4 text-sm">
+      <div><dt class="text-secondary-500">Version</dt><dd class="font-medium mt-1">v{{ item.version }}</dd></div>
+      <div><dt class="text-secondary-500">Total Risks</dt><dd class="font-medium mt-1">{{ item.risks | length if item.risks else 0 }}</dd></div>
+      <div><dt class="text-secondary-500">Created</dt><dd class="font-medium mt-1">{{ item.created_at.strftime('%Y-%m-%d %H:%M') }}</dd></div>
+      <div><dt class="text-secondary-500">Updated</dt><dd class="font-medium mt-1">{{ item.updated_at.strftime('%Y-%m-%d %H:%M') }}</dd></div>
+    </dl>
+  </div>
+
+  <!-- Risks table -->
+  {% if item.risks %}
+  <div class="bg-white rounded-lg border p-6">
+    <h3 class="text-sm font-semibold text-secondary-700 mb-3">Identified Risks</h3>
+    <div class="overflow-x-auto">
+      <table class="min-w-full divide-y divide-gray-200 text-sm">
+        <thead class="bg-gray-50">
+          <tr>
+            <th class="px-4 py-2 text-left text-xs font-semibold text-secondary-600">#</th>
+            <th class="px-4 py-2 text-left text-xs font-semibold text-secondary-600">Risk</th>
+            <th class="px-4 py-2 text-left text-xs font-semibold text-secondary-600">Likelihood</th>
+            <th class="px-4 py-2 text-left text-xs font-semibold text-secondary-600">Impact</th>
+            <th class="px-4 py-2 text-left text-xs font-semibold text-secondary-600">Mitigation</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-gray-100">
+          {% for risk in item.risks %}
+          <tr>
+            <td class="px-4 py-2 text-secondary-500">{{ loop.index }}</td>
+            <td class="px-4 py-2 text-secondary-700 font-medium">{{ risk.title if risk.title is defined else risk.get('title', '—') }}</td>
+            <td class="px-4 py-2 text-secondary-500">{{ risk.likelihood if risk.likelihood is defined else risk.get('likelihood', '—') }}</td>
+            <td class="px-4 py-2 text-secondary-500">{{ risk.impact if risk.impact is defined else risk.get('impact', '—') }}</td>
+            <td class="px-4 py-2 text-secondary-500">{{ risk.mitigation if risk.mitigation is defined else risk.get('mitigation', '—') }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+  {% else %}
+  <div class="bg-white rounded-lg border p-6 text-center text-secondary-400 text-sm">
+    No risks identified in this matrix.
+  </div>
+  {% endif %}
+
+  <!-- Delete Confirm -->
+  <div x-show="showDelete" x-cloak class="fixed inset-0 z-50 flex items-center justify-center">
+    <div class="fixed inset-0 bg-black/50" @click="showDelete = false"></div>
+    <div class="relative bg-white rounded-xl shadow-xl w-full max-w-sm mx-4 p-6 text-center">
+      <h3 class="text-lg font-semibold mb-2">Delete Risk Matrix?</h3>
+      <p class="text-secondary-500 text-sm mb-4">This will soft-delete {{ item.code }}. This action can be undone later.</p>
+      <div class="flex justify-center gap-2">
+        <button @click="showDelete = false" class="px-4 py-2 text-secondary-600 text-sm rounded-lg hover:bg-secondary-50">Cancel</button>
+        <form method="post" action="/development/risk-matrices/{{ item.id }}/delete" class="inline">
+          <button type="submit" class="px-4 py-2 bg-red-600 text-white text-sm rounded-lg hover:bg-red-700">Delete</button>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

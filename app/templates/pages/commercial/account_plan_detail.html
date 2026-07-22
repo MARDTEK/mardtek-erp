@@ -1,0 +1,47 @@
+{% extends "base.html" %}
+{% from 'macros.html' import status_badge %}
+{% block title %}Account Plan #{{ item.id }} — Account Plans{% endblock %}
+{% block page_title %}Account Plan #{{ item.id }}{% endblock %}
+
+{% block content %}
+<div class="space-y-6">
+  <!-- Header -->
+  <div>
+    <p class="text-secondary-500 text-sm">Contract #{{ item.contract_id }}</p>
+    <h2 class="text-xl font-bold text-gray-900 mt-1">Account Plan</h2>
+  </div>
+
+  <!-- Details grid -->
+  <div class="bg-white rounded-lg border p-6">
+    <dl class="grid grid-cols-2 gap-4 text-sm">
+      <div class="col-span-2">
+        <dt class="text-secondary-500">Goals</dt>
+        <dd class="font-medium mt-1 whitespace-pre-wrap">{{ item.goals }}</dd>
+      </div>
+      <div><dt class="text-secondary-500">Review Date</dt><dd class="font-medium mt-1">{{ item.review_date.strftime('%Y-%m-%d') if item.review_date else '—' }}</dd></div>
+      <div><dt class="text-secondary-500">Created</dt><dd class="font-medium mt-1">{{ item.created_at.strftime('%Y-%m-%d %H:%M') }}</dd></div>
+      <div class="col-span-2">
+        <dt class="text-secondary-500">Notes</dt>
+        <dd class="font-medium mt-1 whitespace-pre-wrap">{{ item.notes or '—' }}</dd>
+      </div>
+    </dl>
+  </div>
+
+  <!-- Activities -->
+  {% if item.activities %}
+  <div class="bg-white rounded-lg border overflow-hidden">
+    <div class="px-4 py-3 bg-gray-50 border-b">
+      <h3 class="text-sm font-semibold text-secondary-700">Activities</h3>
+    </div>
+    <ul class="divide-y divide-gray-100">
+      {% for activity in item.activities %}
+      <li class="px-4 py-3 text-sm text-secondary-700">{{ activity }}</li>
+      {% endfor %}
+    </ul>
+  </div>
+  {% endif %}
+
+  <!-- Back link -->
+  <a href="/commercial/contracts" class="text-sm text-primary-600 hover:text-primary-800">&larr; Back to Contracts</a>
+</div>
+{% endblock %}

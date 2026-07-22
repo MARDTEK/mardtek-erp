@@ -1,0 +1,77 @@
+{% extends "base.html" %}
+{% block title %}Create QA Test Report{% endblock %}
+{% block page_title %}Create QA Test Report{% endblock %}
+
+{% block content %}
+<div class="max-w-2xl mx-auto">
+  <div class="bg-white rounded-lg border p-6">
+    <h3 class="text-lg font-semibold mb-4">New QA Test Report</h3>
+    <form method="post" action="/development/qa-reports">
+      <div class="space-y-4">
+        <div class="grid grid-cols-2 gap-4">
+          <div>
+            <label class="block text-sm font-medium text-secondary-700 mb-1">Code</label>
+            <input name="code" required placeholder="QA-2026-001"
+                   class="w-full px-3 py-2 border border-secondary-200 rounded-lg text-sm focus:ring-2 focus:ring-primary-500 focus:border-primary-500">
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-secondary-700 mb-1">Test Type</label>
+            <select name="test_type" required class="w-full px-3 py-2 border border-secondary-200 rounded-lg text-sm focus:ring-2 focus:ring-primary-500 focus:border-primary-500">
+              <option value="unit">Unit</option>
+              <option value="integration">Integration</option>
+              <option value="e2e">End-to-End</option>
+              <option value="performance">Performance</option>
+              <option value="security">Security</option>
+              <option value="regression">Regression</option>
+              <option value="uat">UAT</option>
+            </select>
+          </div>
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-secondary-700 mb-1">Title</label>
+          <input name="title" required
+                 class="w-full px-3 py-2 border border-secondary-200 rounded-lg text-sm focus:ring-2 focus:ring-primary-500 focus:border-primary-500">
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-secondary-700 mb-1">Release ID (optional)</label>
+          <input name="release_id" type="number"
+                 class="w-full px-3 py-2 border border-secondary-200 rounded-lg text-sm focus:ring-2 focus:ring-primary-500 focus:border-primary-500">
+        </div>
+        <div class="grid grid-cols-3 gap-4">
+          <div>
+            <label class="block text-sm font-medium text-secondary-700 mb-1">Total Tests</label>
+            <input name="total_tests" type="number" required min="0" value="0"
+                   class="w-full px-3 py-2 border border-secondary-200 rounded-lg text-sm focus:ring-2 focus:ring-primary-500 focus:border-primary-500">
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-secondary-700 mb-1">Passed</label>
+            <input name="passed" type="number" required min="0" value="0"
+                   class="w-full px-3 py-2 border border-secondary-200 rounded-lg text-sm focus:ring-2 focus:ring-primary-500 focus:border-primary-500">
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-secondary-700 mb-1">Failed</label>
+            <input name="failed" type="number" required min="0" value="0"
+                   class="w-full px-3 py-2 border border-secondary-200 rounded-lg text-sm focus:ring-2 focus:ring-primary-500 focus:border-primary-500">
+          </div>
+        </div>
+        <div class="grid grid-cols-2 gap-4">
+          <div>
+            <label class="block text-sm font-medium text-secondary-700 mb-1">Blocked</label>
+            <input name="blocked" type="number" min="0" value="0"
+                   class="w-full px-3 py-2 border border-secondary-200 rounded-lg text-sm focus:ring-2 focus:ring-primary-500 focus:border-primary-500">
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-secondary-700 mb-1">Report URL (optional)</label>
+            <input name="report_url" placeholder="https://..."
+                   class="w-full px-3 py-2 border border-secondary-200 rounded-lg text-sm focus:ring-2 focus:ring-primary-500 focus:border-primary-500">
+          </div>
+        </div>
+      </div>
+      <div class="flex justify-end gap-2 mt-6">
+        <a href="/development/qa-reports" class="px-4 py-2 text-secondary-600 text-sm rounded-lg hover:bg-secondary-50">Cancel</a>
+        <button type="submit" class="px-4 py-2 bg-primary-600 text-white text-sm rounded-lg hover:bg-primary-700">Create Report</button>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}

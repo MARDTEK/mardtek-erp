@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+{% from 'macros.html' import status_badge, pagination, search_form, empty_state %}
+{% block title %}Strategy Reviews — Strategic Planning{% endblock %}
+{% block page_title %}Strategy Reviews{% endblock %}
+
+{% block content %}
+<div class="space-y-4">
+  <div class="flex items-center justify-between">
+    <div>
+      <p class="text-sm text-secondary-500">{{ total }} review{{ 's' if total != 1 }}</p>
+    </div>
+    <a href="/strategic/reviews/create"
+       class="px-4 py-2 bg-primary-600 text-white rounded-lg text-sm font-medium hover:bg-primary-700 transition-colors">
+      + New Review
+    </a>
+  </div>
+
+  <div id="table-container"
+       hx-get="/strategic/reviews/table?page={{ page }}"
+       hx-trigger="load"
+       hx-swap="innerHTML">
+    <div class="animate-pulse text-secondary-400 text-sm py-8 text-center">Loading reviews...</div>
+  </div>
+
+  {{ pagination(page, total_pages, '/strategic/reviews') }}
+</div>
+{% endblock %}
