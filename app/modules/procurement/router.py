@@ -163,7 +163,30 @@ async def order_purchase_request(pr_id: int, db: AsyncSession = Depends(get_db))
     return pr
 
 
-# ─── Supplier Registration (FO-P9-002) ─────────────────────────────────────
+@router.post("/purchase-requests/{pr_id}/cancel", response_model=PurchaseRequestResponse)
+async def cancel_purchase_request(pr_id: int, db: AsyncSession = Depends(get_db)):
+    result = await db.execute(select(PurchaseRequest).where(PurchaseRequest.id == pr_id))
+    pr = result.scalar_one_or_none()
+    if not pr:
+        raise HTTPException(status_code=404, detail="Purchase request not found")
+    if pr.status not in (PurchaseRequestStatus.SUBMITTED.value, PurchaseRequestStatus.APPROVED.value):
+        raise HTTPException(status_code=409, detail="Only submitted or approved requests can be cancelled")
+    pr.status = PurchaseRequestStatus.CANCELLED.value
+    await db.flush()
+    return pr
+
+
+@router.post("/purchase-requests/{pr_id}/revert", response_model=PurchaseRequestResponse)
+async def revert_purchase_request(pr_id: int, db: AsyncSession = Depends(get_db)):
+    result = await db.execute(select(PurchaseRequest).where(PurchaseRequest.id == pr_id))
+    pr = result.scalar_one_or_none()
+    if not pr:
+        raise HTTPException(status_code=404, detail="Purchase request not found")
+    if pr.status != PurchaseRequestStatus.SUBMITTED.value:
+        raise HTTPException(status_code=409, detail="Only submitted requests can be reverted to draft")
+    pr.status = PurchaseRequestStatus.DRAFT.value
+    await db.flush()
+    return pr
 
 @router.get("/suppliers", response_model=List[SupplierRegistrationResponse])
 async def list_suppliers(

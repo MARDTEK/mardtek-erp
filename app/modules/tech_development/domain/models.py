@@ -96,6 +96,8 @@ class ProductRoadmap(Base):
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), default=lambda: datetime.now(timezone.utc)
     )
+    is_deleted: Mapped[bool] = mapped_column(default=False)
+    deleted_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True, default=None)
     updated_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True),
         default=lambda: datetime.now(timezone.utc),
@@ -122,6 +124,8 @@ class ReleasePlan(Base):
     status: Mapped[ReleaseStatus] = mapped_column(Enum(ReleaseStatus), default=ReleaseStatus.PLANNED)
     release_notes: Mapped[Optional[str]] = mapped_column(Text)
 
+    is_deleted: Mapped[bool] = mapped_column(default=False)
+    deleted_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True, default=None)
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), default=lambda: datetime.now(timezone.utc)
     )
@@ -156,6 +160,8 @@ class TechnicalSpecification(Base):
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), default=lambda: datetime.now(timezone.utc)
     )
+    is_deleted: Mapped[bool] = mapped_column(default=False)
+    deleted_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True, default=None)
     updated_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True),
         default=lambda: datetime.now(timezone.utc),
@@ -180,6 +186,8 @@ class RiskMatrix(Base):
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), default=lambda: datetime.now(timezone.utc)
     )
+    is_deleted: Mapped[bool] = mapped_column(default=False)
+    deleted_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True, default=None)
     updated_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True),
         default=lambda: datetime.now(timezone.utc),
@@ -209,6 +217,8 @@ class QATestReport(Base):
     report_url: Mapped[Optional[str]] = mapped_column(String(500))
     status: Mapped[ReportStatus] = mapped_column(Enum(ReportStatus), default=ReportStatus.DRAFT)
 
+    is_deleted: Mapped[bool] = mapped_column(default=False)
+    deleted_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True, default=None)
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), default=lambda: datetime.now(timezone.utc)
     )
@@ -235,6 +245,8 @@ class DeploymentRecord(Base):
     rollback_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True))
     status: Mapped[DeploymentStatus] = mapped_column(Enum(DeploymentStatus), nullable=False)
     notes: Mapped[Optional[str]] = mapped_column(Text)
+    is_deleted: Mapped[bool] = mapped_column(default=False)
+    deleted_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True, default=None)
 
     # Relationship
     release: Mapped[Optional[ReleasePlan]] = relationship(back_populates="deployments")
@@ -260,6 +272,8 @@ class UATSignOff(Base):
     )
     comments: Mapped[Optional[str]] = mapped_column(Text)
     status: Mapped[UATStatus] = mapped_column(Enum(UATStatus), default=UATStatus.PENDING)
+    is_deleted: Mapped[bool] = mapped_column(default=False)
+    deleted_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True, default=None)
 
     # Relationship
     release: Mapped[Optional[ReleasePlan]] = relationship(back_populates="uat_signoffs")
@@ -281,6 +295,8 @@ class SolutionSunset(Base):
     status: Mapped[SunsetStatus] = mapped_column(Enum(SunsetStatus), default=SunsetStatus.PLANNED)
     approved_by: Mapped[str] = mapped_column(String(255), nullable=False)
 
+    is_deleted: Mapped[bool] = mapped_column(default=False)
+    deleted_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True, default=None)
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), default=lambda: datetime.now(timezone.utc)
     )

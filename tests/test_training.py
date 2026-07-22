@@ -649,7 +649,7 @@ class TestTrainingAuth:
             f"/api/v1/training/needs/{need_id}",
             headers=_auth(token),
         )
-        assert resp.status_code == 405
+        assert resp.status_code == 403
 
     async def test_viewer_can_create_need(self, client: AsyncClient):
         token = await self._register_and_login(client, "trnviewer2", "viewer")

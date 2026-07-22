@@ -89,7 +89,7 @@ class TestJobDescriptions:
             f"/api/v1/hr/job-descriptions/{created['id']}",
             headers=_auth(admin_token),
         )
-        assert resp.status_code == 204
+        assert resp.status_code == 200
 
         get_resp = await client.get(
             f"/api/v1/hr/job-descriptions/{created['id']}",
@@ -254,7 +254,7 @@ class TestStaffRegister:
             f"/api/v1/hr/staff/{created['id']}",
             headers=_auth(admin_token),
         )
-        assert resp.status_code == 204
+        assert resp.status_code == 200
 
         get_resp = await client.get(
             f"/api/v1/hr/staff/{created['id']}",

@@ -203,6 +203,12 @@ class MaintenanceRecordUpdate(BaseModel):
     status: Optional[str] = None
 
 
+class MaintenanceStatusTransition(BaseModel):
+    target_status: str
+    performed_by: str | None = None
+    completed_date: date | None = None
+
+
 class MaintenanceRecordResponse(BaseModel):
     id: int
     asset: str

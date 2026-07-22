@@ -72,7 +72,7 @@ class TestIndicators:
             f"/api/v1/analytics/indicators/{created['id']}",
             headers=_auth(admin_token),
         )
-        assert resp.status_code == 204
+        assert resp.status_code == 200
 
         get_resp = await client.get(
             f"/api/v1/analytics/indicators/{created['id']}",
@@ -189,7 +189,7 @@ class TestDashboards:
             f"/api/v1/analytics/dashboards/{created['id']}",
             headers=_auth(admin_token),
         )
-        assert resp.status_code == 204
+        assert resp.status_code == 200
 
 
 class TestTrendAnalysisReports:

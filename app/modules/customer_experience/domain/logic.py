@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from typing import List, Optional
 
-from sqlalchemy import func, select
+from sqlalchemy import extract, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.modules.customer_experience.domain.models import (
@@ -81,8 +81,17 @@ async def get_complaints_by_status(
     return list(result.scalars().all())
 
 
-async def get_nps_average(db: AsyncSession) -> Optional[float]:
-    """Calculate the average NPS score across all surveys."""
-    result = await db.execute(select(func.avg(NpsSurvey.score)))
+async def get_nps_average(
+    db: AsyncSession,
+    year: int | None = None,
+    quarter: int | None = None,
+) -> float | None:
+    """Calculate the average NPS score, optionally scoped by year and/or quarter."""
+    query = select(func.avg(NpsSurvey.score))
+    if year is not None:
+        query = query.where(extract("year", NpsSurvey.responded_at) == year)
+    if quarter is not None:
+        query = query.where(extract("quarter", NpsSurvey.responded_at) == quarter)
+    result = await db.execute(query)
     avg = result.scalar()
     return round(float(avg), 2) if avg is not None else None

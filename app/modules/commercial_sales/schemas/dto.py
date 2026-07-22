@@ -6,6 +6,11 @@ from typing import Any, Dict, List, Optional
 
 from pydantic import BaseModel, EmailStr, Field
 
+from app.modules.commercial_sales.domain.models import (
+    ContractStatus,
+    ProposalStatus,
+)
+
 
 # ─── Lead ────────────────────────────────────────────────────────────────
 
@@ -101,7 +106,7 @@ class ProposalResponse(BaseModel):
     version: str
     total_amount: Decimal
     lines: list
-    status: str
+    status: ProposalStatus
     valid_until: Optional[date]
     sent_at: Optional[datetime]
     accepted_at: Optional[datetime]
@@ -126,7 +131,7 @@ class ContractResponse(BaseModel):
     total_value: Decimal
     monthly_value: Optional[Decimal]
     sla_clauses: Optional[str]
-    status: str
+    status: ContractStatus
 
     model_config = {"from_attributes": True}
 

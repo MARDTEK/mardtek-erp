@@ -1,9 +1,10 @@
 from __future__ import annotations
 
+from datetime import datetime, timezone
 from typing import List
 
 from fastapi import APIRouter, Depends, HTTPException, status
-from sqlalchemy import select
+from sqlalchemy import extract, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.auth.dependencies import RoleChecker, get_current_user
@@ -76,10 +77,17 @@ async def create_nps_survey(payload: NpsSurveyCreate, db: AsyncSession = Depends
     db.add(survey)
     await db.flush()
 
-    # Check NPS threshold — calculate rolling NPS and emit if breached
-    result = await db.execute(select(NpsSurvey.score))
-    all_scores = [row[0] for row in result.all()]
-    current_nps = calculate_nps(all_scores)
+    # Check NPS threshold — scope to current year/quarter
+    now = datetime.now(timezone.utc)
+    current_year = now.year
+    current_quarter = (now.month - 1) // 3 + 1
+    stmt = select(NpsSurvey.score).where(
+        extract("year", NpsSurvey.responded_at) == current_year,
+        extract("quarter", NpsSurvey.responded_at) == current_quarter,
+    )
+    result = await db.execute(stmt)
+    scores = [row[0] for row in result.all()]
+    current_nps = calculate_nps(scores)
     if current_nps < NPS_TARGET:
         await event_bus.emit(Event(
             name="NPSThresholdBreached",

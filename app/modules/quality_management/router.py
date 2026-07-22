@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from datetime import datetime, timezone
 from typing import List
 
 from fastapi import APIRouter, Depends, HTTPException, status
@@ -62,7 +63,7 @@ async def list_documents(
     db: AsyncSession = Depends(get_db),
     page: PaginationParams = Depends(),
 ):
-    stmt = select(Document)
+    stmt = select(Document).where(Document.is_deleted == False)
     if process_code:
         stmt = stmt.where(Document.process_code == process_code)
     if status:
@@ -97,7 +98,7 @@ async def create_document(payload: DocumentCreate, db: AsyncSession = Depends(ge
 
 @router.get("/documents/{document_id}", response_model=DocumentResponse)
 async def get_document(document_id: int, db: AsyncSession = Depends(get_db)):
-    result = await db.execute(select(Document).where(Document.id == document_id))
+    result = await db.execute(select(Document).where(Document.id == document_id, Document.is_deleted == False))
     doc = result.scalar_one_or_none()
     if not doc:
         raise HTTPException(status_code=404, detail="Document not found")
@@ -106,7 +107,7 @@ async def get_document(document_id: int, db: AsyncSession = Depends(get_db)):
 
 @router.patch("/documents/{document_id}", response_model=DocumentResponse)
 async def update_document(document_id: int, payload: DocumentUpdate, db: AsyncSession = Depends(get_db)):
-    result = await db.execute(select(Document).where(Document.id == document_id))
+    result = await db.execute(select(Document).where(Document.id == document_id, Document.is_deleted == False))
     doc = result.scalar_one_or_none()
     if not doc:
         raise HTTPException(status_code=404, detail="Document not found")
@@ -116,14 +117,30 @@ async def update_document(document_id: int, payload: DocumentUpdate, db: AsyncSe
     return doc
 
 
-@router.delete("/documents/{document_id}", status_code=status.HTTP_204_NO_CONTENT, dependencies=[Depends(RoleChecker("admin", "manager"))])
+@router.delete("/documents/{document_id}", dependencies=[Depends(RoleChecker("admin", "manager"))])
 async def delete_document(document_id: int, db: AsyncSession = Depends(get_db)):
+    result = await db.execute(select(Document).where(Document.id == document_id))
+    doc = result.scalar_one_or_none()
+    if not doc or doc.is_deleted:
+        raise HTTPException(status_code=404, detail="Document not found")
+    doc.is_deleted = True
+    doc.deleted_at = datetime.now(timezone.utc)
+    await db.commit()
+    return {"message": "Document deleted successfully", "id": document_id}
+
+
+@router.patch("/documents/{document_id}/restore")
+async def restore_document(document_id: int, db: AsyncSession = Depends(get_db)):
     result = await db.execute(select(Document).where(Document.id == document_id))
     doc = result.scalar_one_or_none()
     if not doc:
         raise HTTPException(status_code=404, detail="Document not found")
-    await db.delete(doc)
-    await db.flush()
+    if not doc.is_deleted:
+        raise HTTPException(status_code=400, detail="Document is not deleted")
+    doc.is_deleted = False
+    doc.deleted_at = None
+    await db.commit()
+    return doc
 
 
 @router.post("/documents/{document_id}/approve", response_model=DocumentResponse)
@@ -157,7 +174,7 @@ async def list_non_conformities(
     db: AsyncSession = Depends(get_db),
     page: PaginationParams = Depends(),
 ):
-    stmt = select(NonConformity)
+    stmt = select(NonConformity).where(NonConformity.is_deleted == False)
     if status_filter:
         stmt = stmt.where(NonConformity.status == status_filter)
     if severity:
@@ -187,7 +204,7 @@ async def create_non_conformity(payload: NCCreate, db: AsyncSession = Depends(ge
 
 @router.get("/non-conformities/{nc_id}", response_model=NCResponse)
 async def get_non_conformity(nc_id: int, db: AsyncSession = Depends(get_db)):
-    result = await db.execute(select(NonConformity).where(NonConformity.id == nc_id))
+    result = await db.execute(select(NonConformity).where(NonConformity.id == nc_id, NonConformity.is_deleted == False))
     nc = result.scalar_one_or_none()
     if not nc:
         raise HTTPException(status_code=404, detail="Non-conformity not found")
@@ -196,7 +213,7 @@ async def get_non_conformity(nc_id: int, db: AsyncSession = Depends(get_db)):
 
 @router.patch("/non-conformities/{nc_id}/root-cause", response_model=NCResponse)
 async def update_root_cause(nc_id: int, payload: NCUpdateRootCause, db: AsyncSession = Depends(get_db)):
-    result = await db.execute(select(NonConformity).where(NonConformity.id == nc_id))
+    result = await db.execute(select(NonConformity).where(NonConformity.id == nc_id, NonConformity.is_deleted == False))
     nc = result.scalar_one_or_none()
     if not nc:
         raise HTTPException(status_code=404, detail="Non-conformity not found")
@@ -246,14 +263,30 @@ async def close_non_conformity(nc_id: int, db: AsyncSession = Depends(get_db)):
     return nc
 
 
-@router.delete("/non-conformities/{nc_id}", status_code=status.HTTP_204_NO_CONTENT, dependencies=[Depends(RoleChecker("admin", "manager"))])
+@router.delete("/non-conformities/{nc_id}", dependencies=[Depends(RoleChecker("admin", "manager"))])
 async def delete_non_conformity(nc_id: int, db: AsyncSession = Depends(get_db)):
+    result = await db.execute(select(NonConformity).where(NonConformity.id == nc_id))
+    nc = result.scalar_one_or_none()
+    if not nc or nc.is_deleted:
+        raise HTTPException(status_code=404, detail="Non-conformity not found")
+    nc.is_deleted = True
+    nc.deleted_at = datetime.now(timezone.utc)
+    await db.commit()
+    return {"message": "Non-conformity deleted successfully", "id": nc_id}
+
+
+@router.patch("/non-conformities/{nc_id}/restore")
+async def restore_non_conformity(nc_id: int, db: AsyncSession = Depends(get_db)):
     result = await db.execute(select(NonConformity).where(NonConformity.id == nc_id))
     nc = result.scalar_one_or_none()
     if not nc:
         raise HTTPException(status_code=404, detail="Non-conformity not found")
-    await db.delete(nc)
-    await db.flush()
+    if not nc.is_deleted:
+        raise HTTPException(status_code=400, detail="Non-conformity is not deleted")
+    nc.is_deleted = False
+    nc.deleted_at = None
+    await db.commit()
+    return nc
 
 
 # ─── Corrective Actions ──────────────────────────────────────────────────
@@ -265,7 +298,7 @@ async def list_corrective_actions(
     db: AsyncSession = Depends(get_db),
     page: PaginationParams = Depends(),
 ):
-    stmt = select(CorrectiveAction)
+    stmt = select(CorrectiveAction).where(CorrectiveAction.is_deleted == False)
     if nc_id:
         stmt = stmt.where(CorrectiveAction.nc_id == nc_id)
     if status_filter:
@@ -277,7 +310,7 @@ async def list_corrective_actions(
 @router.post("/corrective-actions", response_model=CorrectiveActionResponse, status_code=status.HTTP_201_CREATED)
 async def create_corrective_action(payload: CorrectiveActionCreate, db: AsyncSession = Depends(get_db)):
     # Verify NC exists
-    nc_result = await db.execute(select(NonConformity).where(NonConformity.id == payload.nc_id))
+    nc_result = await db.execute(select(NonConformity).where(NonConformity.id == payload.nc_id, NonConformity.is_deleted == False))
     if not nc_result.scalar_one_or_none():
         raise HTTPException(status_code=404, detail="Non-conformity not found")
 
@@ -305,7 +338,7 @@ async def create_corrective_action(payload: CorrectiveActionCreate, db: AsyncSes
 
 @router.get("/corrective-actions/{action_id}", response_model=CorrectiveActionResponse)
 async def get_corrective_action(action_id: int, db: AsyncSession = Depends(get_db)):
-    result = await db.execute(select(CorrectiveAction).where(CorrectiveAction.id == action_id))
+    result = await db.execute(select(CorrectiveAction).where(CorrectiveAction.id == action_id, CorrectiveAction.is_deleted == False))
     action = result.scalar_one_or_none()
     if not action:
         raise HTTPException(status_code=404, detail="Corrective action not found")
@@ -331,6 +364,32 @@ async def verify_corrective_action(
     return action
 
 
+@router.delete("/corrective-actions/{action_id}", dependencies=[Depends(RoleChecker("admin", "manager"))])
+async def delete_corrective_action(action_id: int, db: AsyncSession = Depends(get_db)):
+    result = await db.execute(select(CorrectiveAction).where(CorrectiveAction.id == action_id))
+    action = result.scalar_one_or_none()
+    if not action or action.is_deleted:
+        raise HTTPException(status_code=404, detail="Corrective action not found")
+    action.is_deleted = True
+    action.deleted_at = datetime.now(timezone.utc)
+    await db.commit()
+    return {"message": "Corrective action deleted successfully", "id": action_id}
+
+
+@router.patch("/corrective-actions/{action_id}/restore")
+async def restore_corrective_action(action_id: int, db: AsyncSession = Depends(get_db)):
+    result = await db.execute(select(CorrectiveAction).where(CorrectiveAction.id == action_id))
+    action = result.scalar_one_or_none()
+    if not action:
+        raise HTTPException(status_code=404, detail="Corrective action not found")
+    if not action.is_deleted:
+        raise HTTPException(status_code=400, detail="Corrective action is not deleted")
+    action.is_deleted = False
+    action.deleted_at = None
+    await db.commit()
+    return action
+
+
 # ─── Internal Audits ─────────────────────────────────────────────────────
 
 @router.get("/audits", response_model=List[AuditResponse])
@@ -340,7 +399,7 @@ async def list_audits(
     db: AsyncSession = Depends(get_db),
     page: PaginationParams = Depends(),
 ):
-    stmt = select(InternalAudit)
+    stmt = select(InternalAudit).where(InternalAudit.is_deleted == False)
     if process_code:
         stmt = stmt.where(InternalAudit.audited_process == process_code)
     if status_filter:
@@ -359,7 +418,7 @@ async def create_audit(payload: AuditCreate, db: AsyncSession = Depends(get_db))
 
 @router.get("/audits/{audit_id}", response_model=AuditResponse)
 async def get_audit(audit_id: int, db: AsyncSession = Depends(get_db)):
-    result = await db.execute(select(InternalAudit).where(InternalAudit.id == audit_id))
+    result = await db.execute(select(InternalAudit).where(InternalAudit.id == audit_id, InternalAudit.is_deleted == False))
     audit = result.scalar_one_or_none()
     if not audit:
         raise HTTPException(status_code=404, detail="Audit not found")
@@ -390,6 +449,32 @@ async def complete_audit_endpoint(
     return audit
 
 
+@router.delete("/audits/{audit_id}", dependencies=[Depends(RoleChecker("admin", "manager"))])
+async def delete_audit(audit_id: int, db: AsyncSession = Depends(get_db)):
+    result = await db.execute(select(InternalAudit).where(InternalAudit.id == audit_id))
+    audit = result.scalar_one_or_none()
+    if not audit or audit.is_deleted:
+        raise HTTPException(status_code=404, detail="Audit not found")
+    audit.is_deleted = True
+    audit.deleted_at = datetime.now(timezone.utc)
+    await db.commit()
+    return {"message": "Audit deleted successfully", "id": audit_id}
+
+
+@router.patch("/audits/{audit_id}/restore")
+async def restore_audit(audit_id: int, db: AsyncSession = Depends(get_db)):
+    result = await db.execute(select(InternalAudit).where(InternalAudit.id == audit_id))
+    audit = result.scalar_one_or_none()
+    if not audit:
+        raise HTTPException(status_code=404, detail="Audit not found")
+    if not audit.is_deleted:
+        raise HTTPException(status_code=400, detail="Audit is not deleted")
+    audit.is_deleted = False
+    audit.deleted_at = None
+    await db.commit()
+    return audit
+
+
 # ─── Audit Checklist ─────────────────────────────────────────────────────
 
 @router.get("/audits/{audit_id}/checklist", response_model=List[ChecklistItemResponse])
@@ -399,7 +484,7 @@ async def list_checklist(
     page: PaginationParams = Depends(),
 ):
     result = await db.execute(
-        paginate(select(AuditChecklistItem).where(AuditChecklistItem.audit_id == audit_id), page)
+        paginate(select(AuditChecklistItem).where(AuditChecklistItem.audit_id == audit_id, AuditChecklistItem.is_deleted == False), page)
     )
     return list(result.scalars().all())
 
@@ -439,7 +524,7 @@ async def list_process_owners(
     db: AsyncSession = Depends(get_db),
     page: PaginationParams = Depends(),
 ):
-    result = await db.execute(paginate(select(ProcessOwner).order_by(ProcessOwner.process_code), page))
+    result = await db.execute(paginate(select(ProcessOwner).where(ProcessOwner.is_deleted == False).order_by(ProcessOwner.process_code), page))
     return list(result.scalars().all())
 
 
@@ -454,7 +539,7 @@ async def create_process_owner(payload: ProcessOwnerCreate, db: AsyncSession = D
 @router.get("/process-owners/{process_code}", response_model=ProcessOwnerResponse)
 async def get_process_owner(process_code: str, db: AsyncSession = Depends(get_db)):
     result = await db.execute(
-        select(ProcessOwner).where(ProcessOwner.process_code == process_code)
+        select(ProcessOwner).where(ProcessOwner.process_code == process_code, ProcessOwner.is_deleted == False)
     )
     owner = result.scalar_one_or_none()
     if not owner:
@@ -462,14 +547,30 @@ async def get_process_owner(process_code: str, db: AsyncSession = Depends(get_db
     return owner
 
 
-@router.delete("/process-owners/{owner_id}", status_code=status.HTTP_204_NO_CONTENT, dependencies=[Depends(RoleChecker("admin", "manager"))])
+@router.delete("/process-owners/{owner_id}", dependencies=[Depends(RoleChecker("admin", "manager"))])
 async def delete_process_owner(owner_id: int, db: AsyncSession = Depends(get_db)):
+    result = await db.execute(select(ProcessOwner).where(ProcessOwner.id == owner_id))
+    owner = result.scalar_one_or_none()
+    if not owner or owner.is_deleted:
+        raise HTTPException(status_code=404, detail="Process owner not found")
+    owner.is_deleted = True
+    owner.deleted_at = datetime.now(timezone.utc)
+    await db.commit()
+    return {"message": "Process owner deleted successfully", "id": owner_id}
+
+
+@router.patch("/process-owners/{owner_id}/restore")
+async def restore_process_owner(owner_id: int, db: AsyncSession = Depends(get_db)):
     result = await db.execute(select(ProcessOwner).where(ProcessOwner.id == owner_id))
     owner = result.scalar_one_or_none()
     if not owner:
         raise HTTPException(status_code=404, detail="Process owner not found")
-    await db.delete(owner)
-    await db.flush()
+    if not owner.is_deleted:
+        raise HTTPException(status_code=400, detail="Process owner is not deleted")
+    owner.is_deleted = False
+    owner.deleted_at = None
+    await db.commit()
+    return owner
 
 
 # ─── Continuous Improvement ──────────────────────────────────────────────
@@ -480,7 +581,7 @@ async def list_improvements(
     db: AsyncSession = Depends(get_db),
     page: PaginationParams = Depends(),
 ):
-    stmt = select(ContinuousImprovement)
+    stmt = select(ContinuousImprovement).where(ContinuousImprovement.is_deleted == False)
     if status_filter:
         stmt = stmt.where(ContinuousImprovement.status == status_filter)
     result = await db.execute(paginate(stmt.order_by(ContinuousImprovement.code.desc()), page))
@@ -498,7 +599,7 @@ async def create_improvement(payload: ImprovementCreate, db: AsyncSession = Depe
 @router.get("/improvements/{improvement_id}", response_model=ImprovementResponse)
 async def get_improvement(improvement_id: int, db: AsyncSession = Depends(get_db)):
     result = await db.execute(
-        select(ContinuousImprovement).where(ContinuousImprovement.id == improvement_id)
+        select(ContinuousImprovement).where(ContinuousImprovement.id == improvement_id, ContinuousImprovement.is_deleted == False)
     )
     imp = result.scalar_one_or_none()
     if not imp:
@@ -521,4 +622,30 @@ async def implement_improvement_endpoint(
         source_module="quality_management",
     ))
 
+    return imp
+
+
+@router.delete("/improvements/{improvement_id}", dependencies=[Depends(RoleChecker("admin", "manager"))])
+async def delete_improvement(improvement_id: int, db: AsyncSession = Depends(get_db)):
+    result = await db.execute(select(ContinuousImprovement).where(ContinuousImprovement.id == improvement_id))
+    imp = result.scalar_one_or_none()
+    if not imp or imp.is_deleted:
+        raise HTTPException(status_code=404, detail="Improvement not found")
+    imp.is_deleted = True
+    imp.deleted_at = datetime.now(timezone.utc)
+    await db.commit()
+    return {"message": "Improvement deleted successfully", "id": improvement_id}
+
+
+@router.patch("/improvements/{improvement_id}/restore")
+async def restore_improvement(improvement_id: int, db: AsyncSession = Depends(get_db)):
+    result = await db.execute(select(ContinuousImprovement).where(ContinuousImprovement.id == improvement_id))
+    imp = result.scalar_one_or_none()
+    if not imp:
+        raise HTTPException(status_code=404, detail="Improvement not found")
+    if not imp.is_deleted:
+        raise HTTPException(status_code=400, detail="Improvement is not deleted")
+    imp.is_deleted = False
+    imp.deleted_at = None
+    await db.commit()
     return imp

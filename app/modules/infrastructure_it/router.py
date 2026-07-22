@@ -10,7 +10,10 @@ from app.auth.dependencies import RoleChecker, get_current_user
 from app.core.database import get_db
 from app.core.event_bus import Event, event_bus
 from app.core.pagination import PaginationParams, paginate
-from app.modules.infrastructure_it.domain.logic import get_open_incidents_by_severity
+from app.modules.infrastructure_it.domain.logic import (
+    get_open_incidents_by_severity,
+    transition_maintenance_status,
+)
 from app.modules.infrastructure_it.domain.models import (
     AvailabilityReport,
     BusinessContinuityPlan,
@@ -34,6 +37,7 @@ from app.modules.infrastructure_it.schemas.dto import (
     InfrastructureRequestUpdate,
     MaintenanceRecordCreate,
     MaintenanceRecordResponse,
+    MaintenanceStatusTransition,
     MaintenanceRecordUpdate,
     SecurityIncidentCreate,
     SecurityIncidentResponse,
@@ -448,5 +452,35 @@ async def update_maintenance_record(
         raise HTTPException(status_code=404, detail="Maintenance record not found")
     for field, value in payload.model_dump(exclude_unset=True).items():
         setattr(record, field, value)
+    await db.flush()
+    return record
+
+
+@router.patch(
+    "/maintenance-records/{record_id}/transition",
+    response_model=MaintenanceRecordResponse,
+)
+async def transition_maintenance_record(
+    record_id: int,
+    payload: MaintenanceStatusTransition,
+    db: AsyncSession = Depends(get_db),
+):
+    result = await db.execute(select(MaintenanceRecord).where(MaintenanceRecord.id == record_id))
+    record = result.scalar_one_or_none()
+    if not record:
+        raise HTTPException(status_code=404, detail="Maintenance record not found")
+
+    updated = await transition_maintenance_status(
+        record,
+        target_status=payload.target_status,
+        performed_by=payload.performed_by,
+        completed_date=payload.completed_date,
+    )
+    if not updated:
+        raise HTTPException(
+            status_code=422,
+            detail="Invalid status transition. SCHEDULED→IN_PROGRESS always allowed; IN_PROGRESS→COMPLETED requires performed_by and completed_date.",
+        )
+
     await db.flush()
     return record

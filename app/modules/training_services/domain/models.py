@@ -82,6 +82,8 @@ class TrainingNeedsAssessment(Base):
     skills_gap: Mapped[str] = mapped_column(Text, nullable=False)
     priority: Mapped[NeedPriority] = mapped_column(Enum(NeedPriority), default=NeedPriority.MEDIUM)
     status: Mapped[NeedStatus] = mapped_column(Enum(NeedStatus), default=NeedStatus.IDENTIFIED)
+    is_deleted: Mapped[bool] = mapped_column(default=False)
+    deleted_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True, default=None)
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), default=lambda: datetime.now(timezone.utc)
     )
@@ -101,6 +103,8 @@ class CompetencyMatrix(Base):
     competencies: Mapped[dict] = mapped_column(JSON, default=list)  # [{name, required_level, current_level, gap}]
     version: Mapped[str] = mapped_column(String(10), default="1.0")
     is_active: Mapped[bool] = mapped_column(default=True)
+    is_deleted: Mapped[bool] = mapped_column(default=False)
+    deleted_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True, default=None)
 
     def __repr__(self) -> str:
         return f"<CompetencyMatrix {self.code} v{self.version} [{self.role}]>"
@@ -118,6 +122,8 @@ class Course(Base):
     duration_hours: Mapped[int] = mapped_column(Integer, nullable=False)
     content: Mapped[str] = mapped_column(Text, nullable=False)
     status: Mapped[CourseStatus] = mapped_column(Enum(CourseStatus), default=CourseStatus.DRAFT)
+    is_deleted: Mapped[bool] = mapped_column(default=False)
+    deleted_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True, default=None)
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), default=lambda: datetime.now(timezone.utc)
     )
@@ -142,6 +148,8 @@ class TrainingPlan(Base):
     courses: Mapped[dict] = mapped_column(JSON, default=list)  # List of course codes or ids
     budget: Mapped[float] = mapped_column(Numeric(12, 2), nullable=False, default=0)
     status: Mapped[PlanStatus] = mapped_column(Enum(PlanStatus), default=PlanStatus.DRAFT)
+    is_deleted: Mapped[bool] = mapped_column(default=False)
+    deleted_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True, default=None)
 
     def __repr__(self) -> str:
         return f"<TrainingPlan {self.code} [{self.year}] {self.status.value}>"
@@ -161,6 +169,8 @@ class TrainingSession(Base):
     end_date: Mapped[date] = mapped_column(Date, nullable=False)
     attendees: Mapped[dict] = mapped_column(JSON, default=list)  # List of participant names
     status: Mapped[SessionStatus] = mapped_column(Enum(SessionStatus), default=SessionStatus.SCHEDULED)
+    is_deleted: Mapped[bool] = mapped_column(default=False)
+    deleted_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True, default=None)
 
     # Relationships
     course: Mapped[Course] = relationship(back_populates="sessions")
@@ -187,6 +197,8 @@ class TrainingEvaluation(Base):
     participant: Mapped[str] = mapped_column(String(255), nullable=False)
     score: Mapped[int] = mapped_column(Integer, nullable=False)  # 1-5
     feedback: Mapped[Optional[str]] = mapped_column(Text)
+    is_deleted: Mapped[bool] = mapped_column(default=False)
+    deleted_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True, default=None)
     submitted_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), default=lambda: datetime.now(timezone.utc)
     )
@@ -209,6 +221,8 @@ class AttendanceRecord(Base):
     )
     participant_name: Mapped[str] = mapped_column(String(255), nullable=False)
     hours_attended: Mapped[float] = mapped_column(Float, nullable=False, default=0)
+    is_deleted: Mapped[bool] = mapped_column(default=False)
+    deleted_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True, default=None)
     signed_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), default=lambda: datetime.now(timezone.utc)
     )
@@ -237,6 +251,8 @@ class CertificationRecord(Base):
     )
     expires_at: Mapped[Optional[date]] = mapped_column(Date)
     status: Mapped[CertStatus] = mapped_column(Enum(CertStatus), default=CertStatus.ACTIVE)
+    is_deleted: Mapped[bool] = mapped_column(default=False)
+    deleted_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True, default=None)
 
     # Relationships
     course: Mapped[Course] = relationship()
@@ -257,6 +273,8 @@ class UserManual(Base):
     version: Mapped[str] = mapped_column(String(10), default="1.0")
     content_url: Mapped[str] = mapped_column(String(500), nullable=False)
     status: Mapped[ManualStatus] = mapped_column(Enum(ManualStatus), default=ManualStatus.DRAFT)
+    is_deleted: Mapped[bool] = mapped_column(default=False)
+    deleted_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True, default=None)
 
     def __repr__(self) -> str:
         return f"<UserManual {self.code} v{self.version} — {self.title}>"
@@ -276,6 +294,8 @@ class VideoTutorial(Base):
     url: Mapped[str] = mapped_column(String(500), nullable=False)
     duration_minutes: Mapped[int] = mapped_column(Integer, nullable=False)
     status: Mapped[VideoStatus] = mapped_column(Enum(VideoStatus), default=VideoStatus.DRAFT)
+    is_deleted: Mapped[bool] = mapped_column(default=False)
+    deleted_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True, default=None)
 
     def __repr__(self) -> str:
         return f"<VideoTutorial {self.code} — {self.title} [{self.duration_minutes}min]>"

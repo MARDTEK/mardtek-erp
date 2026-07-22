@@ -16,6 +16,7 @@ from app.modules.commercial_sales.domain.models import (
     Onboarding,
     OnboardingStatus,
     Proposal,
+    ProposalStatus,
     SaasSubscription,
     SubscriptionStatus,
 )
@@ -48,7 +49,7 @@ async def win_lead(db: AsyncSession, lead_id: int, proposal_id: int) -> Optional
         return None
 
     lead.status = LeadStatus.WON
-    proposal.status = "accepted"
+    proposal.status = ProposalStatus.ACCEPTED
     proposal.accepted_at = datetime.now(timezone.utc)
 
     # Auto-create contract
@@ -148,7 +149,7 @@ async def accept_proposal(db: AsyncSession, proposal_id: int) -> Optional[Propos
     proposal = result.scalar_one_or_none()
     if proposal is None:
         return None
-    proposal.status = "accepted"
+    proposal.status = ProposalStatus.ACCEPTED
     proposal.accepted_at = datetime.now(timezone.utc)
     await db.flush()
     return proposal

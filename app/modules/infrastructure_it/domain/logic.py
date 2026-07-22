@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import Dict
+from typing import Dict, Optional
 
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -11,6 +11,8 @@ from app.modules.infrastructure_it.domain.models import (
     IncidentReport,
     IncidentSeverity,
     IncidentStatus,
+    MaintenanceRecord,
+    MaintenanceStatus,
 )
 
 
@@ -61,3 +63,29 @@ async def get_open_incidents_by_severity(db: AsyncSession) -> Dict[str, int]:
         .group_by(IncidentReport.severity)
     )
     return {row[0].value: row[1] for row in result.all()}
+
+
+# ─── Maintenance Transitions ───────────────────────────────────────────────
+
+async def transition_maintenance_status(
+    record: MaintenanceRecord,
+    target_status: str,
+    performed_by: str | None = None,
+    completed_date: date | None = None,
+) -> Optional[MaintenanceRecord]:
+    current = record.status
+    target = MaintenanceStatus(target_status)
+
+    if current == MaintenanceStatus.SCHEDULED and target == MaintenanceStatus.IN_PROGRESS:
+        record.status = target
+        return record
+
+    if current == MaintenanceStatus.IN_PROGRESS and target == MaintenanceStatus.COMPLETED:
+        if not performed_by or not completed_date:
+            return None
+        record.status = target
+        record.performed_by = performed_by
+        record.completed_date = completed_date
+        return record
+
+    return None

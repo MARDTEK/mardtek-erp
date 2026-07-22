@@ -55,6 +55,11 @@ class CompetencyMatrixUpdate(BaseModel):
     is_active: Optional[bool] = None
 
 
+class CompetencyMatrixGapUpdate(BaseModel):
+    role: str | None = None
+    competencies: list[dict] | None = None
+
+
 class CompetencyMatrixResponse(BaseModel):
     id: int
     code: str

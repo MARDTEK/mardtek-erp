@@ -216,7 +216,7 @@ class TestRoleProtection:
             f"/api/v1/quality/documents/{doc_id}",
             headers={"Authorization": f"Bearer {token}"},
         )
-        assert resp.status_code == 204
+        assert resp.status_code == 200
 
     async def test_unauthenticated_request_blocked(self, client: AsyncClient):
         """No token → 401 for any protected endpoint."""

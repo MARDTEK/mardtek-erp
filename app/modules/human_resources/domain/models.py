@@ -5,8 +5,8 @@ from datetime import date, datetime, timezone
 from decimal import Decimal
 from typing import List, Optional
 
-from sqlalchemy import JSON, Boolean, Column, Date, DateTime, Enum, Integer, Numeric, String, Text
-from sqlalchemy.orm import Mapped, mapped_column
+from sqlalchemy import JSON, Boolean, Column, Date, DateTime, Enum, ForeignKey, Integer, Numeric, String, Text
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.core.database import Base
 
@@ -78,6 +78,8 @@ class JobDescription(Base):
     requirements: Mapped[str] = mapped_column(Text, nullable=False)
     competencies: Mapped[dict] = mapped_column(JSON, default=list)  # JSON list of competency names/levels
     is_active: Mapped[bool] = mapped_column(Boolean, default=True)
+    is_deleted: Mapped[bool] = mapped_column(default=False)
+    deleted_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True, default=None)
 
     def __repr__(self) -> str:
         return f"<JobDescription {self.code} — {self.title}>"
@@ -98,6 +100,8 @@ class PersonnelRequest(Base):
     status: Mapped[PersonnelRequestStatus] = mapped_column(
         Enum(PersonnelRequestStatus), default=PersonnelRequestStatus.OPEN
     )
+    is_deleted: Mapped[bool] = mapped_column(default=False)
+    deleted_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True, default=None)
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), default=lambda: datetime.now(timezone.utc)
     )
@@ -120,6 +124,8 @@ class InductionChecklist(Base):
     status: Mapped[InductionChecklistStatus] = mapped_column(
         Enum(InductionChecklistStatus), default=InductionChecklistStatus.IN_PROGRESS
     )
+    is_deleted: Mapped[bool] = mapped_column(default=False)
+    deleted_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True, default=None)
 
     def __repr__(self) -> str:
         return f"<InductionChecklist {self.employee_name} [{self.status.value}]>"
@@ -136,6 +142,8 @@ class IndividualDevelopmentPlan(Base):
     courses: Mapped[dict] = mapped_column(JSON, default=list)  # JSON list of course objects
     review_date: Mapped[Optional[date]] = mapped_column(Date)
     status: Mapped[IDPStatus] = mapped_column(Enum(IDPStatus), default=IDPStatus.ACTIVE)
+    is_deleted: Mapped[bool] = mapped_column(default=False)
+    deleted_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True, default=None)
 
     def __repr__(self) -> str:
         return f"<IndividualDevelopmentPlan {self.employee_name} [{self.status.value}]>"
@@ -156,6 +164,8 @@ class PerformanceEvaluation(Base):
     status: Mapped[EvaluationStatus] = mapped_column(
         Enum(EvaluationStatus), default=EvaluationStatus.DRAFT
     )
+    is_deleted: Mapped[bool] = mapped_column(default=False)
+    deleted_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True, default=None)
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), default=lambda: datetime.now(timezone.utc)
     )
@@ -178,6 +188,8 @@ class LaborIncident(Base):
     status: Mapped[IncidentStatus] = mapped_column(
         Enum(IncidentStatus, name="hr_incident_status"), default=IncidentStatus.OPEN
     )
+    is_deleted: Mapped[bool] = mapped_column(default=False)
+    deleted_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True, default=None)
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), default=lambda: datetime.now(timezone.utc)
     )
@@ -199,6 +211,33 @@ class StaffRegister(Base):
     hire_date: Mapped[date] = mapped_column(Date, nullable=False)
     contract_type: Mapped[ContractType] = mapped_column(Enum(ContractType, name="hr_contract_type"), nullable=False)
     status: Mapped[StaffStatus] = mapped_column(Enum(StaffStatus), default=StaffStatus.ACTIVE)
+    is_deleted: Mapped[bool] = mapped_column(default=False)
+    deleted_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True, default=None)
+
+    assessments: Mapped[List["CompetencyAssessment"]] = relationship(back_populates="employee")
 
     def __repr__(self) -> str:
         return f"<StaffRegister {self.employee_name} — {self.position} [{self.status.value}]>"
+
+
+class CompetencyAssessment(Base):
+    """HR competency assessment — links an employee to a skill evaluation."""
+
+    __tablename__ = "hr_competency_assessments"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    employee_id: Mapped[int] = mapped_column(ForeignKey("hr_staff_register.id"), nullable=False)
+    skill: Mapped[str] = mapped_column(String(255), nullable=False)
+    assessed_level: Mapped[str] = mapped_column(String(50), nullable=False)
+    required_level: Mapped[str] = mapped_column(String(50), nullable=False)
+    has_gap: Mapped[bool] = mapped_column(Boolean, default=True)
+    is_deleted: Mapped[bool] = mapped_column(default=False)
+    deleted_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True, default=None)
+    assessed_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=lambda: datetime.now(timezone.utc)
+    )
+
+    employee: Mapped[StaffRegister] = relationship(back_populates="assessments")
+
+    def __repr__(self) -> str:
+        return f"<CompetencyAssessment #{self.id} employee={self.employee_id} skill={self.skill} gap={self.has_gap}>"

@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from datetime import datetime, timezone
 from typing import List
 
 from fastapi import APIRouter, Depends, HTTPException, status
@@ -68,7 +69,7 @@ async def list_roadmaps(
     db: AsyncSession = Depends(get_db),
     page: PaginationParams = Depends(),
 ):
-    stmt = select(ProductRoadmap)
+    stmt = select(ProductRoadmap).where(ProductRoadmap.is_deleted == False)
     if product_line:
         stmt = stmt.where(ProductRoadmap.product_line == product_line)
     if year is not None:
@@ -89,7 +90,7 @@ async def create_roadmap(payload: ProductRoadmapCreate, db: AsyncSession = Depen
 
 @router.get("/roadmaps/{roadmap_id}", response_model=ProductRoadmapResponse)
 async def get_roadmap(roadmap_id: int, db: AsyncSession = Depends(get_db)):
-    result = await db.execute(select(ProductRoadmap).where(ProductRoadmap.id == roadmap_id))
+    result = await db.execute(select(ProductRoadmap).where(ProductRoadmap.id == roadmap_id, ProductRoadmap.is_deleted == False))
     roadmap = result.scalar_one_or_none()
     if not roadmap:
         raise HTTPException(status_code=404, detail="Roadmap not found")
@@ -98,7 +99,7 @@ async def get_roadmap(roadmap_id: int, db: AsyncSession = Depends(get_db)):
 
 @router.patch("/roadmaps/{roadmap_id}", response_model=ProductRoadmapResponse)
 async def update_roadmap(roadmap_id: int, payload: ProductRoadmapUpdate, db: AsyncSession = Depends(get_db)):
-    result = await db.execute(select(ProductRoadmap).where(ProductRoadmap.id == roadmap_id))
+    result = await db.execute(select(ProductRoadmap).where(ProductRoadmap.id == roadmap_id, ProductRoadmap.is_deleted == False))
     roadmap = result.scalar_one_or_none()
     if not roadmap:
         raise HTTPException(status_code=404, detail="Roadmap not found")
@@ -108,14 +109,30 @@ async def update_roadmap(roadmap_id: int, payload: ProductRoadmapUpdate, db: Asy
     return roadmap
 
 
-@router.delete("/roadmaps/{roadmap_id}", status_code=status.HTTP_204_NO_CONTENT, dependencies=[Depends(RoleChecker("admin", "manager"))])
+@router.delete("/roadmaps/{roadmap_id}", dependencies=[Depends(RoleChecker("admin", "manager"))])
 async def delete_roadmap(roadmap_id: int, db: AsyncSession = Depends(get_db)):
+    result = await db.execute(select(ProductRoadmap).where(ProductRoadmap.id == roadmap_id))
+    roadmap = result.scalar_one_or_none()
+    if not roadmap or roadmap.is_deleted:
+        raise HTTPException(status_code=404, detail="Roadmap not found")
+    roadmap.is_deleted = True
+    roadmap.deleted_at = datetime.now(timezone.utc)
+    await db.commit()
+    return {"message": "Roadmap deleted successfully", "id": roadmap_id}
+
+
+@router.patch("/roadmaps/{roadmap_id}/restore")
+async def restore_roadmap(roadmap_id: int, db: AsyncSession = Depends(get_db)):
     result = await db.execute(select(ProductRoadmap).where(ProductRoadmap.id == roadmap_id))
     roadmap = result.scalar_one_or_none()
     if not roadmap:
         raise HTTPException(status_code=404, detail="Roadmap not found")
-    await db.delete(roadmap)
-    await db.flush()
+    if not roadmap.is_deleted:
+        raise HTTPException(status_code=400, detail="Roadmap is not deleted")
+    roadmap.is_deleted = False
+    roadmap.deleted_at = None
+    await db.commit()
+    return roadmap
 
 
 # ─── ReleasePlan (PLN-P4-002) ─────────────────────────────────────────────
@@ -131,7 +148,7 @@ async def list_releases(
     if status:
         return await get_release_by_status(db, status)
 
-    stmt = select(ReleasePlan)
+    stmt = select(ReleasePlan).where(ReleasePlan.is_deleted == False)
     if product:
         stmt = stmt.where(ReleasePlan.product == product)
     result = await db.execute(paginate(stmt.order_by(ReleasePlan.planned_date.desc()), page))
@@ -148,7 +165,7 @@ async def create_release(payload: ReleasePlanCreate, db: AsyncSession = Depends(
 
 @router.get("/releases/{release_id}", response_model=ReleasePlanResponse)
 async def get_release(release_id: int, db: AsyncSession = Depends(get_db)):
-    result = await db.execute(select(ReleasePlan).where(ReleasePlan.id == release_id))
+    result = await db.execute(select(ReleasePlan).where(ReleasePlan.id == release_id, ReleasePlan.is_deleted == False))
     release = result.scalar_one_or_none()
     if not release:
         raise HTTPException(status_code=404, detail="Release plan not found")
@@ -157,7 +174,7 @@ async def get_release(release_id: int, db: AsyncSession = Depends(get_db)):
 
 @router.patch("/releases/{release_id}", response_model=ReleasePlanResponse)
 async def update_release(release_id: int, payload: ReleasePlanUpdate, db: AsyncSession = Depends(get_db)):
-    result = await db.execute(select(ReleasePlan).where(ReleasePlan.id == release_id))
+    result = await db.execute(select(ReleasePlan).where(ReleasePlan.id == release_id, ReleasePlan.is_deleted == False))
     release = result.scalar_one_or_none()
     if not release:
         raise HTTPException(status_code=404, detail="Release plan not found")
@@ -167,14 +184,30 @@ async def update_release(release_id: int, payload: ReleasePlanUpdate, db: AsyncS
     return release
 
 
-@router.delete("/releases/{release_id}", status_code=status.HTTP_204_NO_CONTENT, dependencies=[Depends(RoleChecker("admin", "manager"))])
+@router.delete("/releases/{release_id}", dependencies=[Depends(RoleChecker("admin", "manager"))])
 async def delete_release(release_id: int, db: AsyncSession = Depends(get_db)):
+    result = await db.execute(select(ReleasePlan).where(ReleasePlan.id == release_id))
+    release = result.scalar_one_or_none()
+    if not release or release.is_deleted:
+        raise HTTPException(status_code=404, detail="Release plan not found")
+    release.is_deleted = True
+    release.deleted_at = datetime.now(timezone.utc)
+    await db.commit()
+    return {"message": "Release plan deleted successfully", "id": release_id}
+
+
+@router.patch("/releases/{release_id}/restore")
+async def restore_release(release_id: int, db: AsyncSession = Depends(get_db)):
     result = await db.execute(select(ReleasePlan).where(ReleasePlan.id == release_id))
     release = result.scalar_one_or_none()
     if not release:
         raise HTTPException(status_code=404, detail="Release plan not found")
-    await db.delete(release)
-    await db.flush()
+    if not release.is_deleted:
+        raise HTTPException(status_code=400, detail="Release plan is not deleted")
+    release.is_deleted = False
+    release.deleted_at = None
+    await db.commit()
+    return release
 
 
 # ─── TechnicalSpecification ───────────────────────────────────────────────
@@ -188,7 +221,7 @@ async def list_specifications(
     db: AsyncSession = Depends(get_db),
     page: PaginationParams = Depends(),
 ):
-    stmt = select(TechnicalSpecification)
+    stmt = select(TechnicalSpecification).where(TechnicalSpecification.is_deleted == False)
     if project_id is not None:
         stmt = stmt.where(TechnicalSpecification.project_id == project_id)
     if product:
@@ -209,7 +242,7 @@ async def create_specification(payload: TechnicalSpecificationCreate, db: AsyncS
 
 @router.get("/specifications/{spec_id}", response_model=TechnicalSpecificationResponse)
 async def get_specification(spec_id: int, db: AsyncSession = Depends(get_db)):
-    result = await db.execute(select(TechnicalSpecification).where(TechnicalSpecification.id == spec_id))
+    result = await db.execute(select(TechnicalSpecification).where(TechnicalSpecification.id == spec_id, TechnicalSpecification.is_deleted == False))
     spec = result.scalar_one_or_none()
     if not spec:
         raise HTTPException(status_code=404, detail="Specification not found")
@@ -222,7 +255,7 @@ async def update_specification(
     payload: TechnicalSpecificationUpdate,
     db: AsyncSession = Depends(get_db),
 ):
-    result = await db.execute(select(TechnicalSpecification).where(TechnicalSpecification.id == spec_id))
+    result = await db.execute(select(TechnicalSpecification).where(TechnicalSpecification.id == spec_id, TechnicalSpecification.is_deleted == False))
     spec = result.scalar_one_or_none()
     if not spec:
         raise HTTPException(status_code=404, detail="Specification not found")
@@ -232,14 +265,30 @@ async def update_specification(
     return spec
 
 
-@router.delete("/specifications/{spec_id}", status_code=status.HTTP_204_NO_CONTENT, dependencies=[Depends(RoleChecker("admin", "manager"))])
+@router.delete("/specifications/{spec_id}", dependencies=[Depends(RoleChecker("admin", "manager"))])
 async def delete_specification(spec_id: int, db: AsyncSession = Depends(get_db)):
+    result = await db.execute(select(TechnicalSpecification).where(TechnicalSpecification.id == spec_id))
+    spec = result.scalar_one_or_none()
+    if not spec or spec.is_deleted:
+        raise HTTPException(status_code=404, detail="Specification not found")
+    spec.is_deleted = True
+    spec.deleted_at = datetime.now(timezone.utc)
+    await db.commit()
+    return {"message": "Specification deleted successfully", "id": spec_id}
+
+
+@router.patch("/specifications/{spec_id}/restore")
+async def restore_specification(spec_id: int, db: AsyncSession = Depends(get_db)):
     result = await db.execute(select(TechnicalSpecification).where(TechnicalSpecification.id == spec_id))
     spec = result.scalar_one_or_none()
     if not spec:
         raise HTTPException(status_code=404, detail="Specification not found")
-    await db.delete(spec)
-    await db.flush()
+    if not spec.is_deleted:
+        raise HTTPException(status_code=400, detail="Specification is not deleted")
+    spec.is_deleted = False
+    spec.deleted_at = None
+    await db.commit()
+    return spec
 
 
 # ─── RiskMatrix (MAT-P4-001) ──────────────────────────────────────────────
@@ -251,7 +300,7 @@ async def list_risk_matrices(
     db: AsyncSession = Depends(get_db),
     page: PaginationParams = Depends(),
 ):
-    stmt = select(RiskMatrix)
+    stmt = select(RiskMatrix).where(RiskMatrix.is_deleted == False)
     if project_id is not None:
         stmt = stmt.where(RiskMatrix.project_id == project_id)
     result = await db.execute(paginate(stmt.order_by(RiskMatrix.code), page))
@@ -268,7 +317,7 @@ async def create_risk_matrix(payload: RiskMatrixCreate, db: AsyncSession = Depen
 
 @router.get("/risk-matrices/{matrix_id}", response_model=RiskMatrixResponse)
 async def get_risk_matrix(matrix_id: int, db: AsyncSession = Depends(get_db)):
-    result = await db.execute(select(RiskMatrix).where(RiskMatrix.id == matrix_id))
+    result = await db.execute(select(RiskMatrix).where(RiskMatrix.id == matrix_id, RiskMatrix.is_deleted == False))
     matrix = result.scalar_one_or_none()
     if not matrix:
         raise HTTPException(status_code=404, detail="Risk matrix not found")
@@ -281,7 +330,7 @@ async def update_risk_matrix(
     payload: RiskMatrixUpdate,
     db: AsyncSession = Depends(get_db),
 ):
-    result = await db.execute(select(RiskMatrix).where(RiskMatrix.id == matrix_id))
+    result = await db.execute(select(RiskMatrix).where(RiskMatrix.id == matrix_id, RiskMatrix.is_deleted == False))
     matrix = result.scalar_one_or_none()
     if not matrix:
         raise HTTPException(status_code=404, detail="Risk matrix not found")
@@ -291,14 +340,30 @@ async def update_risk_matrix(
     return matrix
 
 
-@router.delete("/risk-matrices/{matrix_id}", status_code=status.HTTP_204_NO_CONTENT, dependencies=[Depends(RoleChecker("admin", "manager"))])
+@router.delete("/risk-matrices/{matrix_id}", dependencies=[Depends(RoleChecker("admin", "manager"))])
 async def delete_risk_matrix(matrix_id: int, db: AsyncSession = Depends(get_db)):
+    result = await db.execute(select(RiskMatrix).where(RiskMatrix.id == matrix_id))
+    matrix = result.scalar_one_or_none()
+    if not matrix or matrix.is_deleted:
+        raise HTTPException(status_code=404, detail="Risk matrix not found")
+    matrix.is_deleted = True
+    matrix.deleted_at = datetime.now(timezone.utc)
+    await db.commit()
+    return {"message": "Risk matrix deleted successfully", "id": matrix_id}
+
+
+@router.patch("/risk-matrices/{matrix_id}/restore")
+async def restore_risk_matrix(matrix_id: int, db: AsyncSession = Depends(get_db)):
     result = await db.execute(select(RiskMatrix).where(RiskMatrix.id == matrix_id))
     matrix = result.scalar_one_or_none()
     if not matrix:
         raise HTTPException(status_code=404, detail="Risk matrix not found")
-    await db.delete(matrix)
-    await db.flush()
+    if not matrix.is_deleted:
+        raise HTTPException(status_code=400, detail="Risk matrix is not deleted")
+    matrix.is_deleted = False
+    matrix.deleted_at = None
+    await db.commit()
+    return matrix
 
 
 # ─── QATestReport (INF-P4-001) ────────────────────────────────────────────
@@ -312,7 +377,7 @@ async def list_qa_reports(
     db: AsyncSession = Depends(get_db),
     page: PaginationParams = Depends(),
 ):
-    stmt = select(QATestReport)
+    stmt = select(QATestReport).where(QATestReport.is_deleted == False)
     if test_type:
         stmt = stmt.where(QATestReport.test_type == test_type)
     if status:
@@ -351,7 +416,7 @@ async def create_qa_report(payload: QATestReportCreate, db: AsyncSession = Depen
 
 @router.get("/qa-reports/{report_id}", response_model=QATestReportResponse)
 async def get_qa_report(report_id: int, db: AsyncSession = Depends(get_db)):
-    result = await db.execute(select(QATestReport).where(QATestReport.id == report_id))
+    result = await db.execute(select(QATestReport).where(QATestReport.id == report_id, QATestReport.is_deleted == False))
     report = result.scalar_one_or_none()
     if not report:
         raise HTTPException(status_code=404, detail="QA report not found")
@@ -364,7 +429,7 @@ async def update_qa_report(
     payload: QATestReportUpdate,
     db: AsyncSession = Depends(get_db),
 ):
-    result = await db.execute(select(QATestReport).where(QATestReport.id == report_id))
+    result = await db.execute(select(QATestReport).where(QATestReport.id == report_id, QATestReport.is_deleted == False))
     report = result.scalar_one_or_none()
     if not report:
         raise HTTPException(status_code=404, detail="QA report not found")
@@ -374,14 +439,30 @@ async def update_qa_report(
     return report
 
 
-@router.delete("/qa-reports/{report_id}", status_code=status.HTTP_204_NO_CONTENT, dependencies=[Depends(RoleChecker("admin", "manager"))])
+@router.delete("/qa-reports/{report_id}", dependencies=[Depends(RoleChecker("admin", "manager"))])
 async def delete_qa_report(report_id: int, db: AsyncSession = Depends(get_db)):
+    result = await db.execute(select(QATestReport).where(QATestReport.id == report_id))
+    report = result.scalar_one_or_none()
+    if not report or report.is_deleted:
+        raise HTTPException(status_code=404, detail="QA report not found")
+    report.is_deleted = True
+    report.deleted_at = datetime.now(timezone.utc)
+    await db.commit()
+    return {"message": "QA report deleted successfully", "id": report_id}
+
+
+@router.patch("/qa-reports/{report_id}/restore")
+async def restore_qa_report(report_id: int, db: AsyncSession = Depends(get_db)):
     result = await db.execute(select(QATestReport).where(QATestReport.id == report_id))
     report = result.scalar_one_or_none()
     if not report:
         raise HTTPException(status_code=404, detail="QA report not found")
-    await db.delete(report)
-    await db.flush()
+    if not report.is_deleted:
+        raise HTTPException(status_code=400, detail="QA report is not deleted")
+    report.is_deleted = False
+    report.deleted_at = None
+    await db.commit()
+    return report
 
 
 # ─── DeploymentRecord (REG-P4-001) ────────────────────────────────────────
@@ -395,7 +476,7 @@ async def list_deployments(
     db: AsyncSession = Depends(get_db),
     page: PaginationParams = Depends(),
 ):
-    stmt = select(DeploymentRecord)
+    stmt = select(DeploymentRecord).where(DeploymentRecord.is_deleted == False)
     if environment:
         stmt = stmt.where(DeploymentRecord.environment == environment)
     if status:
@@ -439,10 +520,36 @@ async def create_deployment(payload: DeploymentRecordCreate, db: AsyncSession = 
 
 @router.get("/deployments/{deployment_id}", response_model=DeploymentRecordResponse)
 async def get_deployment(deployment_id: int, db: AsyncSession = Depends(get_db)):
+    result = await db.execute(select(DeploymentRecord).where(DeploymentRecord.id == deployment_id, DeploymentRecord.is_deleted == False))
+    record = result.scalar_one_or_none()
+    if not record:
+        raise HTTPException(status_code=404, detail="Deployment record not found")
+    return record
+
+
+@router.delete("/deployments/{deployment_id}", dependencies=[Depends(RoleChecker("admin", "manager"))])
+async def delete_deployment(deployment_id: int, db: AsyncSession = Depends(get_db)):
+    result = await db.execute(select(DeploymentRecord).where(DeploymentRecord.id == deployment_id))
+    record = result.scalar_one_or_none()
+    if not record or record.is_deleted:
+        raise HTTPException(status_code=404, detail="Deployment record not found")
+    record.is_deleted = True
+    record.deleted_at = datetime.now(timezone.utc)
+    await db.commit()
+    return {"message": "Deployment record deleted successfully", "id": deployment_id}
+
+
+@router.patch("/deployments/{deployment_id}/restore")
+async def restore_deployment(deployment_id: int, db: AsyncSession = Depends(get_db)):
     result = await db.execute(select(DeploymentRecord).where(DeploymentRecord.id == deployment_id))
     record = result.scalar_one_or_none()
     if not record:
         raise HTTPException(status_code=404, detail="Deployment record not found")
+    if not record.is_deleted:
+        raise HTTPException(status_code=400, detail="Deployment record is not deleted")
+    record.is_deleted = False
+    record.deleted_at = None
+    await db.commit()
     return record
 
 
@@ -457,7 +564,7 @@ async def list_uat_signoffs(
     db: AsyncSession = Depends(get_db),
     page: PaginationParams = Depends(),
 ):
-    stmt = select(UATSignOff)
+    stmt = select(UATSignOff).where(UATSignOff.is_deleted == False)
     if release_id is not None:
         stmt = stmt.where(UATSignOff.release_id == release_id)
     if project_id is not None:
@@ -478,7 +585,7 @@ async def create_uat_signoff(payload: UATSignOffCreate, db: AsyncSession = Depen
 
 @router.get("/uat-signoffs/{signoff_id}", response_model=UATSignOffResponse)
 async def get_uat_signoff(signoff_id: int, db: AsyncSession = Depends(get_db)):
-    result = await db.execute(select(UATSignOff).where(UATSignOff.id == signoff_id))
+    result = await db.execute(select(UATSignOff).where(UATSignOff.id == signoff_id, UATSignOff.is_deleted == False))
     signoff = result.scalar_one_or_none()
     if not signoff:
         raise HTTPException(status_code=404, detail="UAT sign-off not found")
@@ -491,7 +598,7 @@ async def update_uat_signoff(
     payload: UATSignOffUpdate,
     db: AsyncSession = Depends(get_db),
 ):
-    result = await db.execute(select(UATSignOff).where(UATSignOff.id == signoff_id))
+    result = await db.execute(select(UATSignOff).where(UATSignOff.id == signoff_id, UATSignOff.is_deleted == False))
     signoff = result.scalar_one_or_none()
     if not signoff:
         raise HTTPException(status_code=404, detail="UAT sign-off not found")
@@ -501,14 +608,30 @@ async def update_uat_signoff(
     return signoff
 
 
-@router.delete("/uat-signoffs/{signoff_id}", status_code=status.HTTP_204_NO_CONTENT, dependencies=[Depends(RoleChecker("admin", "manager"))])
+@router.delete("/uat-signoffs/{signoff_id}", dependencies=[Depends(RoleChecker("admin", "manager"))])
 async def delete_uat_signoff(signoff_id: int, db: AsyncSession = Depends(get_db)):
+    result = await db.execute(select(UATSignOff).where(UATSignOff.id == signoff_id))
+    signoff = result.scalar_one_or_none()
+    if not signoff or signoff.is_deleted:
+        raise HTTPException(status_code=404, detail="UAT sign-off not found")
+    signoff.is_deleted = True
+    signoff.deleted_at = datetime.now(timezone.utc)
+    await db.commit()
+    return {"message": "UAT sign-off deleted successfully", "id": signoff_id}
+
+
+@router.patch("/uat-signoffs/{signoff_id}/restore")
+async def restore_uat_signoff(signoff_id: int, db: AsyncSession = Depends(get_db)):
     result = await db.execute(select(UATSignOff).where(UATSignOff.id == signoff_id))
     signoff = result.scalar_one_or_none()
     if not signoff:
         raise HTTPException(status_code=404, detail="UAT sign-off not found")
-    await db.delete(signoff)
-    await db.flush()
+    if not signoff.is_deleted:
+        raise HTTPException(status_code=400, detail="UAT sign-off is not deleted")
+    signoff.is_deleted = False
+    signoff.deleted_at = None
+    await db.commit()
+    return signoff
 
 
 # ─── SolutionSunset ───────────────────────────────────────────────────────
@@ -521,7 +644,7 @@ async def list_sunsets(
     db: AsyncSession = Depends(get_db),
     page: PaginationParams = Depends(),
 ):
-    stmt = select(SolutionSunset)
+    stmt = select(SolutionSunset).where(SolutionSunset.is_deleted == False)
     if status:
         stmt = stmt.where(SolutionSunset.status == status)
     if product:
@@ -540,7 +663,7 @@ async def create_sunset(payload: SolutionSunsetCreate, db: AsyncSession = Depend
 
 @router.get("/sunsets/{sunset_id}", response_model=SolutionSunsetResponse)
 async def get_sunset(sunset_id: int, db: AsyncSession = Depends(get_db)):
-    result = await db.execute(select(SolutionSunset).where(SolutionSunset.id == sunset_id))
+    result = await db.execute(select(SolutionSunset).where(SolutionSunset.id == sunset_id, SolutionSunset.is_deleted == False))
     sunset = result.scalar_one_or_none()
     if not sunset:
         raise HTTPException(status_code=404, detail="Sunset plan not found")
@@ -553,7 +676,7 @@ async def update_sunset(
     payload: SolutionSunsetUpdate,
     db: AsyncSession = Depends(get_db),
 ):
-    result = await db.execute(select(SolutionSunset).where(SolutionSunset.id == sunset_id))
+    result = await db.execute(select(SolutionSunset).where(SolutionSunset.id == sunset_id, SolutionSunset.is_deleted == False))
     sunset = result.scalar_one_or_none()
     if not sunset:
         raise HTTPException(status_code=404, detail="Sunset plan not found")
@@ -563,11 +686,27 @@ async def update_sunset(
     return sunset
 
 
-@router.delete("/sunsets/{sunset_id}", status_code=status.HTTP_204_NO_CONTENT, dependencies=[Depends(RoleChecker("admin", "manager"))])
+@router.delete("/sunsets/{sunset_id}", dependencies=[Depends(RoleChecker("admin", "manager"))])
 async def delete_sunset(sunset_id: int, db: AsyncSession = Depends(get_db)):
+    result = await db.execute(select(SolutionSunset).where(SolutionSunset.id == sunset_id))
+    sunset = result.scalar_one_or_none()
+    if not sunset or sunset.is_deleted:
+        raise HTTPException(status_code=404, detail="Sunset plan not found")
+    sunset.is_deleted = True
+    sunset.deleted_at = datetime.now(timezone.utc)
+    await db.commit()
+    return {"message": "Sunset plan deleted successfully", "id": sunset_id}
+
+
+@router.patch("/sunsets/{sunset_id}/restore")
+async def restore_sunset(sunset_id: int, db: AsyncSession = Depends(get_db)):
     result = await db.execute(select(SolutionSunset).where(SolutionSunset.id == sunset_id))
     sunset = result.scalar_one_or_none()
     if not sunset:
         raise HTTPException(status_code=404, detail="Sunset plan not found")
-    await db.delete(sunset)
-    await db.flush()
+    if not sunset.is_deleted:
+        raise HTTPException(status_code=400, detail="Sunset plan is not deleted")
+    sunset.is_deleted = False
+    sunset.deleted_at = None
+    await db.commit()
+    return sunset

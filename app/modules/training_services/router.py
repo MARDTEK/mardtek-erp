@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from datetime import datetime, timezone
 from typing import List
 
 from fastapi import APIRouter, Depends, HTTPException, status
@@ -38,6 +39,7 @@ from app.modules.training_services.schemas.dto import (
     CertificationRecordResponse,
     CertificationRecordUpdate,
     CompetencyMatrixCreate,
+    CompetencyMatrixGapUpdate,
     CompetencyMatrixResponse,
     CompetencyMatrixUpdate,
     CourseCreate,
@@ -77,7 +79,7 @@ async def list_needs(
     db: AsyncSession = Depends(get_db),
     page: PaginationParams = Depends(),
 ):
-    stmt = select(TrainingNeedsAssessment)
+    stmt = select(TrainingNeedsAssessment).where(TrainingNeedsAssessment.is_deleted == False)
     if priority:
         stmt = stmt.where(TrainingNeedsAssessment.priority == priority)
     if status_filter:
@@ -99,7 +101,7 @@ async def create_need(payload: TrainingNeedsCreate, db: AsyncSession = Depends(g
 @router.get("/needs/{need_id}", response_model=TrainingNeedsResponse)
 async def get_need(need_id: int, db: AsyncSession = Depends(get_db)):
     result = await db.execute(
-        select(TrainingNeedsAssessment).where(TrainingNeedsAssessment.id == need_id)
+        select(TrainingNeedsAssessment).where(TrainingNeedsAssessment.id == need_id, TrainingNeedsAssessment.is_deleted == False)
     )
     need = result.scalar_one_or_none()
     if not need:
@@ -110,7 +112,7 @@ async def get_need(need_id: int, db: AsyncSession = Depends(get_db)):
 @router.patch("/needs/{need_id}", response_model=TrainingNeedsResponse)
 async def update_need(need_id: int, payload: TrainingNeedsUpdate, db: AsyncSession = Depends(get_db)):
     result = await db.execute(
-        select(TrainingNeedsAssessment).where(TrainingNeedsAssessment.id == need_id)
+        select(TrainingNeedsAssessment).where(TrainingNeedsAssessment.id == need_id, TrainingNeedsAssessment.is_deleted == False)
     )
     need = result.scalar_one_or_none()
     if not need:
@@ -118,6 +120,32 @@ async def update_need(need_id: int, payload: TrainingNeedsUpdate, db: AsyncSessi
     for field, value in payload.model_dump(exclude_unset=True).items():
         setattr(need, field, value)
     await db.flush()
+    return need
+
+
+@router.delete("/needs/{need_id}", dependencies=[Depends(RoleChecker("admin", "manager"))])
+async def delete_need(need_id: int, db: AsyncSession = Depends(get_db)):
+    result = await db.execute(select(TrainingNeedsAssessment).where(TrainingNeedsAssessment.id == need_id))
+    need = result.scalar_one_or_none()
+    if not need or need.is_deleted:
+        raise HTTPException(status_code=404, detail="Training needs assessment not found")
+    need.is_deleted = True
+    need.deleted_at = datetime.now(timezone.utc)
+    await db.commit()
+    return {"message": "Training needs assessment deleted successfully", "id": need_id}
+
+
+@router.patch("/needs/{need_id}/restore")
+async def restore_need(need_id: int, db: AsyncSession = Depends(get_db)):
+    result = await db.execute(select(TrainingNeedsAssessment).where(TrainingNeedsAssessment.id == need_id))
+    need = result.scalar_one_or_none()
+    if not need:
+        raise HTTPException(status_code=404, detail="Training needs assessment not found")
+    if not need.is_deleted:
+        raise HTTPException(status_code=400, detail="Training needs assessment is not deleted")
+    need.is_deleted = False
+    need.deleted_at = None
+    await db.commit()
     return need
 
 
@@ -130,7 +158,7 @@ async def list_competency_matrices(
     db: AsyncSession = Depends(get_db),
     page: PaginationParams = Depends(),
 ):
-    stmt = select(CompetencyMatrix)
+    stmt = select(CompetencyMatrix).where(CompetencyMatrix.is_deleted == False)
     if role:
         stmt = stmt.where(CompetencyMatrix.role.ilike(f"%{role}%"))
     if is_active is not None:
@@ -150,7 +178,7 @@ async def create_competency_matrix(payload: CompetencyMatrixCreate, db: AsyncSes
 @router.get("/competency-matrices/{matrix_id}", response_model=CompetencyMatrixResponse)
 async def get_competency_matrix(matrix_id: int, db: AsyncSession = Depends(get_db)):
     result = await db.execute(
-        select(CompetencyMatrix).where(CompetencyMatrix.id == matrix_id)
+        select(CompetencyMatrix).where(CompetencyMatrix.id == matrix_id, CompetencyMatrix.is_deleted == False)
     )
     matrix = result.scalar_one_or_none()
     if not matrix:
@@ -165,7 +193,7 @@ async def update_competency_matrix(
     db: AsyncSession = Depends(get_db),
 ):
     result = await db.execute(
-        select(CompetencyMatrix).where(CompetencyMatrix.id == matrix_id)
+        select(CompetencyMatrix).where(CompetencyMatrix.id == matrix_id, CompetencyMatrix.is_deleted == False)
     )
     matrix = result.scalar_one_or_none()
     if not matrix:
@@ -176,13 +204,39 @@ async def update_competency_matrix(
     return matrix
 
 
+@router.delete("/competency-matrices/{matrix_id}", dependencies=[Depends(RoleChecker("admin", "manager"))])
+async def delete_competency_matrix(matrix_id: int, db: AsyncSession = Depends(get_db)):
+    result = await db.execute(select(CompetencyMatrix).where(CompetencyMatrix.id == matrix_id))
+    matrix = result.scalar_one_or_none()
+    if not matrix or matrix.is_deleted:
+        raise HTTPException(status_code=404, detail="Competency matrix not found")
+    matrix.is_deleted = True
+    matrix.deleted_at = datetime.now(timezone.utc)
+    await db.commit()
+    return {"message": "Competency matrix deleted successfully", "id": matrix_id}
+
+
+@router.patch("/competency-matrices/{matrix_id}/restore")
+async def restore_competency_matrix(matrix_id: int, db: AsyncSession = Depends(get_db)):
+    result = await db.execute(select(CompetencyMatrix).where(CompetencyMatrix.id == matrix_id))
+    matrix = result.scalar_one_or_none()
+    if not matrix:
+        raise HTTPException(status_code=404, detail="Competency matrix not found")
+    if not matrix.is_deleted:
+        raise HTTPException(status_code=400, detail="Competency matrix is not deleted")
+    matrix.is_deleted = False
+    matrix.deleted_at = None
+    await db.commit()
+    return matrix
+
+
 @router.post(
     "/competency-matrices/{matrix_id}/update-gap",
     response_model=CompetencyMatrixResponse,
 )
 async def update_gap_endpoint(
     matrix_id: int,
-    payload: CompetencyMatrixCreate,
+    payload: CompetencyMatrixGapUpdate,
     db: AsyncSession = Depends(get_db),
 ):
     matrix = await update_competency_gap(db, matrix_id, payload.role, payload.competencies)
@@ -200,7 +254,7 @@ async def list_courses(
     db: AsyncSession = Depends(get_db),
     page: PaginationParams = Depends(),
 ):
-    stmt = select(Course)
+    stmt = select(Course).where(Course.is_deleted == False)
     if modality:
         stmt = stmt.where(Course.modality == modality)
     if status_filter:
@@ -219,7 +273,7 @@ async def create_course(payload: CourseCreate, db: AsyncSession = Depends(get_db
 
 @router.get("/courses/{course_id}", response_model=CourseResponse)
 async def get_course(course_id: int, db: AsyncSession = Depends(get_db)):
-    result = await db.execute(select(Course).where(Course.id == course_id))
+    result = await db.execute(select(Course).where(Course.id == course_id, Course.is_deleted == False))
     course = result.scalar_one_or_none()
     if not course:
         raise HTTPException(status_code=404, detail="Course not found")
@@ -228,13 +282,39 @@ async def get_course(course_id: int, db: AsyncSession = Depends(get_db)):
 
 @router.patch("/courses/{course_id}", response_model=CourseResponse)
 async def update_course(course_id: int, payload: CourseUpdate, db: AsyncSession = Depends(get_db)):
-    result = await db.execute(select(Course).where(Course.id == course_id))
+    result = await db.execute(select(Course).where(Course.id == course_id, Course.is_deleted == False))
     course = result.scalar_one_or_none()
     if not course:
         raise HTTPException(status_code=404, detail="Course not found")
     for field, value in payload.model_dump(exclude_unset=True).items():
         setattr(course, field, value)
     await db.flush()
+    return course
+
+
+@router.delete("/courses/{course_id}", dependencies=[Depends(RoleChecker("admin", "manager"))])
+async def delete_course(course_id: int, db: AsyncSession = Depends(get_db)):
+    result = await db.execute(select(Course).where(Course.id == course_id))
+    course = result.scalar_one_or_none()
+    if not course or course.is_deleted:
+        raise HTTPException(status_code=404, detail="Course not found")
+    course.is_deleted = True
+    course.deleted_at = datetime.now(timezone.utc)
+    await db.commit()
+    return {"message": "Course deleted successfully", "id": course_id}
+
+
+@router.patch("/courses/{course_id}/restore")
+async def restore_course(course_id: int, db: AsyncSession = Depends(get_db)):
+    result = await db.execute(select(Course).where(Course.id == course_id))
+    course = result.scalar_one_or_none()
+    if not course:
+        raise HTTPException(status_code=404, detail="Course not found")
+    if not course.is_deleted:
+        raise HTTPException(status_code=400, detail="Course is not deleted")
+    course.is_deleted = False
+    course.deleted_at = None
+    await db.commit()
     return course
 
 
@@ -247,7 +327,7 @@ async def list_plans(
     db: AsyncSession = Depends(get_db),
     page: PaginationParams = Depends(),
 ):
-    stmt = select(TrainingPlan)
+    stmt = select(TrainingPlan).where(TrainingPlan.is_deleted == False)
     if year:
         stmt = stmt.where(TrainingPlan.year == year)
     if status_filter:
@@ -266,7 +346,7 @@ async def create_plan(payload: TrainingPlanCreate, db: AsyncSession = Depends(ge
 
 @router.get("/plans/{plan_id}", response_model=TrainingPlanResponse)
 async def get_plan(plan_id: int, db: AsyncSession = Depends(get_db)):
-    result = await db.execute(select(TrainingPlan).where(TrainingPlan.id == plan_id))
+    result = await db.execute(select(TrainingPlan).where(TrainingPlan.id == plan_id, TrainingPlan.is_deleted == False))
     plan = result.scalar_one_or_none()
     if not plan:
         raise HTTPException(status_code=404, detail="Training plan not found")
@@ -275,13 +355,39 @@ async def get_plan(plan_id: int, db: AsyncSession = Depends(get_db)):
 
 @router.patch("/plans/{plan_id}", response_model=TrainingPlanResponse)
 async def update_plan(plan_id: int, payload: TrainingPlanUpdate, db: AsyncSession = Depends(get_db)):
-    result = await db.execute(select(TrainingPlan).where(TrainingPlan.id == plan_id))
+    result = await db.execute(select(TrainingPlan).where(TrainingPlan.id == plan_id, TrainingPlan.is_deleted == False))
     plan = result.scalar_one_or_none()
     if not plan:
         raise HTTPException(status_code=404, detail="Training plan not found")
     for field, value in payload.model_dump(exclude_unset=True).items():
         setattr(plan, field, value)
     await db.flush()
+    return plan
+
+
+@router.delete("/plans/{plan_id}", dependencies=[Depends(RoleChecker("admin", "manager"))])
+async def delete_plan(plan_id: int, db: AsyncSession = Depends(get_db)):
+    result = await db.execute(select(TrainingPlan).where(TrainingPlan.id == plan_id))
+    plan = result.scalar_one_or_none()
+    if not plan or plan.is_deleted:
+        raise HTTPException(status_code=404, detail="Training plan not found")
+    plan.is_deleted = True
+    plan.deleted_at = datetime.now(timezone.utc)
+    await db.commit()
+    return {"message": "Training plan deleted successfully", "id": plan_id}
+
+
+@router.patch("/plans/{plan_id}/restore")
+async def restore_plan(plan_id: int, db: AsyncSession = Depends(get_db)):
+    result = await db.execute(select(TrainingPlan).where(TrainingPlan.id == plan_id))
+    plan = result.scalar_one_or_none()
+    if not plan:
+        raise HTTPException(status_code=404, detail="Training plan not found")
+    if not plan.is_deleted:
+        raise HTTPException(status_code=400, detail="Training plan is not deleted")
+    plan.is_deleted = False
+    plan.deleted_at = None
+    await db.commit()
     return plan
 
 
@@ -295,7 +401,7 @@ async def list_sessions(
     db: AsyncSession = Depends(get_db),
     page: PaginationParams = Depends(),
 ):
-    stmt = select(TrainingSession)
+    stmt = select(TrainingSession).where(TrainingSession.is_deleted == False)
     if course_id is not None:
         stmt = stmt.where(TrainingSession.course_id == course_id)
     if status_filter:
@@ -309,7 +415,7 @@ async def list_sessions(
 @router.post("/sessions", response_model=TrainingSessionResponse, status_code=status.HTTP_201_CREATED)
 async def create_session(payload: TrainingSessionCreate, db: AsyncSession = Depends(get_db)):
     # Verify course exists
-    course_result = await db.execute(select(Course).where(Course.id == payload.course_id))
+    course_result = await db.execute(select(Course).where(Course.id == payload.course_id, Course.is_deleted == False))
     if not course_result.scalar_one_or_none():
         raise HTTPException(status_code=404, detail="Course not found")
 
@@ -322,7 +428,7 @@ async def create_session(payload: TrainingSessionCreate, db: AsyncSession = Depe
 @router.get("/sessions/{session_id}", response_model=TrainingSessionResponse)
 async def get_session(session_id: int, db: AsyncSession = Depends(get_db)):
     result = await db.execute(
-        select(TrainingSession).where(TrainingSession.id == session_id)
+        select(TrainingSession).where(TrainingSession.id == session_id, TrainingSession.is_deleted == False)
     )
     session = result.scalar_one_or_none()
     if not session:
@@ -337,7 +443,7 @@ async def update_session(
     db: AsyncSession = Depends(get_db),
 ):
     result = await db.execute(
-        select(TrainingSession).where(TrainingSession.id == session_id)
+        select(TrainingSession).where(TrainingSession.id == session_id, TrainingSession.is_deleted == False)
     )
     session = result.scalar_one_or_none()
     if not session:
@@ -368,6 +474,32 @@ async def update_session(
     return session
 
 
+@router.delete("/sessions/{session_id}", dependencies=[Depends(RoleChecker("admin", "manager"))])
+async def delete_session(session_id: int, db: AsyncSession = Depends(get_db)):
+    result = await db.execute(select(TrainingSession).where(TrainingSession.id == session_id))
+    session = result.scalar_one_or_none()
+    if not session or session.is_deleted:
+        raise HTTPException(status_code=404, detail="Training session not found")
+    session.is_deleted = True
+    session.deleted_at = datetime.now(timezone.utc)
+    await db.commit()
+    return {"message": "Training session deleted successfully", "id": session_id}
+
+
+@router.patch("/sessions/{session_id}/restore")
+async def restore_session(session_id: int, db: AsyncSession = Depends(get_db)):
+    result = await db.execute(select(TrainingSession).where(TrainingSession.id == session_id))
+    session = result.scalar_one_or_none()
+    if not session:
+        raise HTTPException(status_code=404, detail="Training session not found")
+    if not session.is_deleted:
+        raise HTTPException(status_code=400, detail="Training session is not deleted")
+    session.is_deleted = False
+    session.deleted_at = None
+    await db.commit()
+    return session
+
+
 # ─── Training Evaluation (FO-P6-002) ─────────────────────────────────────
 
 @router.get("/evaluations", response_model=List[TrainingEvaluationResponse])
@@ -377,7 +509,7 @@ async def list_evaluations(
     db: AsyncSession = Depends(get_db),
     page: PaginationParams = Depends(),
 ):
-    stmt = select(TrainingEvaluation)
+    stmt = select(TrainingEvaluation).where(TrainingEvaluation.is_deleted == False)
     if session_id is not None:
         stmt = stmt.where(TrainingEvaluation.session_id == session_id)
     if participant:
@@ -390,7 +522,7 @@ async def list_evaluations(
 async def create_evaluation(payload: TrainingEvaluationCreate, db: AsyncSession = Depends(get_db)):
     # Verify session exists
     session_result = await db.execute(
-        select(TrainingSession).where(TrainingSession.id == payload.session_id)
+        select(TrainingSession).where(TrainingSession.id == payload.session_id, TrainingSession.is_deleted == False)
     )
     if not session_result.scalar_one_or_none():
         raise HTTPException(status_code=404, detail="Training session not found")
@@ -408,7 +540,7 @@ async def update_evaluation(
     db: AsyncSession = Depends(get_db),
 ):
     result = await db.execute(
-        select(TrainingEvaluation).where(TrainingEvaluation.id == evaluation_id)
+        select(TrainingEvaluation).where(TrainingEvaluation.id == evaluation_id, TrainingEvaluation.is_deleted == False)
     )
     evaluation = result.scalar_one_or_none()
     if not evaluation:
@@ -416,6 +548,32 @@ async def update_evaluation(
     for field, value in payload.model_dump(exclude_unset=True).items():
         setattr(evaluation, field, value)
     await db.flush()
+    return evaluation
+
+
+@router.delete("/evaluations/{evaluation_id}", dependencies=[Depends(RoleChecker("admin", "manager"))])
+async def delete_evaluation(evaluation_id: int, db: AsyncSession = Depends(get_db)):
+    result = await db.execute(select(TrainingEvaluation).where(TrainingEvaluation.id == evaluation_id))
+    evaluation = result.scalar_one_or_none()
+    if not evaluation or evaluation.is_deleted:
+        raise HTTPException(status_code=404, detail="Training evaluation not found")
+    evaluation.is_deleted = True
+    evaluation.deleted_at = datetime.now(timezone.utc)
+    await db.commit()
+    return {"message": "Training evaluation deleted successfully", "id": evaluation_id}
+
+
+@router.patch("/evaluations/{evaluation_id}/restore")
+async def restore_evaluation(evaluation_id: int, db: AsyncSession = Depends(get_db)):
+    result = await db.execute(select(TrainingEvaluation).where(TrainingEvaluation.id == evaluation_id))
+    evaluation = result.scalar_one_or_none()
+    if not evaluation:
+        raise HTTPException(status_code=404, detail="Training evaluation not found")
+    if not evaluation.is_deleted:
+        raise HTTPException(status_code=400, detail="Training evaluation is not deleted")
+    evaluation.is_deleted = False
+    evaluation.deleted_at = None
+    await db.commit()
     return evaluation
 
 
@@ -428,7 +586,7 @@ async def list_attendance(
     db: AsyncSession = Depends(get_db),
     page: PaginationParams = Depends(),
 ):
-    stmt = select(AttendanceRecord)
+    stmt = select(AttendanceRecord).where(AttendanceRecord.is_deleted == False)
     if session_id is not None:
         stmt = stmt.where(AttendanceRecord.session_id == session_id)
     if participant_name:
@@ -441,7 +599,7 @@ async def list_attendance(
 async def create_attendance(payload: AttendanceRecordCreate, db: AsyncSession = Depends(get_db)):
     # Verify session exists
     session_result = await db.execute(
-        select(TrainingSession).where(TrainingSession.id == payload.session_id)
+        select(TrainingSession).where(TrainingSession.id == payload.session_id, TrainingSession.is_deleted == False)
     )
     if not session_result.scalar_one_or_none():
         raise HTTPException(status_code=404, detail="Training session not found")
@@ -455,7 +613,7 @@ async def create_attendance(payload: AttendanceRecordCreate, db: AsyncSession = 
 @router.get("/attendance/{record_id}", response_model=AttendanceRecordResponse)
 async def get_attendance(record_id: int, db: AsyncSession = Depends(get_db)):
     result = await db.execute(
-        select(AttendanceRecord).where(AttendanceRecord.id == record_id)
+        select(AttendanceRecord).where(AttendanceRecord.id == record_id, AttendanceRecord.is_deleted == False)
     )
     record = result.scalar_one_or_none()
     if not record:
@@ -470,7 +628,7 @@ async def update_attendance(
     db: AsyncSession = Depends(get_db),
 ):
     result = await db.execute(
-        select(AttendanceRecord).where(AttendanceRecord.id == record_id)
+        select(AttendanceRecord).where(AttendanceRecord.id == record_id, AttendanceRecord.is_deleted == False)
     )
     record = result.scalar_one_or_none()
     if not record:
@@ -478,6 +636,32 @@ async def update_attendance(
     for field, value in payload.model_dump(exclude_unset=True).items():
         setattr(record, field, value)
     await db.flush()
+    return record
+
+
+@router.delete("/attendance/{record_id}", dependencies=[Depends(RoleChecker("admin", "manager"))])
+async def delete_attendance(record_id: int, db: AsyncSession = Depends(get_db)):
+    result = await db.execute(select(AttendanceRecord).where(AttendanceRecord.id == record_id))
+    record = result.scalar_one_or_none()
+    if not record or record.is_deleted:
+        raise HTTPException(status_code=404, detail="Attendance record not found")
+    record.is_deleted = True
+    record.deleted_at = datetime.now(timezone.utc)
+    await db.commit()
+    return {"message": "Attendance record deleted successfully", "id": record_id}
+
+
+@router.patch("/attendance/{record_id}/restore")
+async def restore_attendance(record_id: int, db: AsyncSession = Depends(get_db)):
+    result = await db.execute(select(AttendanceRecord).where(AttendanceRecord.id == record_id))
+    record = result.scalar_one_or_none()
+    if not record:
+        raise HTTPException(status_code=404, detail="Attendance record not found")
+    if not record.is_deleted:
+        raise HTTPException(status_code=400, detail="Attendance record is not deleted")
+    record.is_deleted = False
+    record.deleted_at = None
+    await db.commit()
     return record
 
 
@@ -491,7 +675,7 @@ async def list_certifications(
     db: AsyncSession = Depends(get_db),
     page: PaginationParams = Depends(),
 ):
-    stmt = select(CertificationRecord)
+    stmt = select(CertificationRecord).where(CertificationRecord.is_deleted == False)
     if participant_name:
         stmt = stmt.where(CertificationRecord.participant_name.ilike(f"%{participant_name}%"))
     if status_filter:
@@ -509,7 +693,7 @@ async def list_certifications(
 )
 async def create_certification(payload: CertificationRecordCreate, db: AsyncSession = Depends(get_db)):
     # Verify course exists
-    course_result = await db.execute(select(Course).where(Course.id == payload.course_id))
+    course_result = await db.execute(select(Course).where(Course.id == payload.course_id, Course.is_deleted == False))
     if not course_result.scalar_one_or_none():
         raise HTTPException(status_code=404, detail="Course not found")
 
@@ -540,7 +724,7 @@ async def create_certification(payload: CertificationRecordCreate, db: AsyncSess
 @router.get("/certifications/{cert_id}", response_model=CertificationRecordResponse)
 async def get_certification(cert_id: int, db: AsyncSession = Depends(get_db)):
     result = await db.execute(
-        select(CertificationRecord).where(CertificationRecord.id == cert_id)
+        select(CertificationRecord).where(CertificationRecord.id == cert_id, CertificationRecord.is_deleted == False)
     )
     cert = result.scalar_one_or_none()
     if not cert:
@@ -555,7 +739,7 @@ async def update_certification(
     db: AsyncSession = Depends(get_db),
 ):
     result = await db.execute(
-        select(CertificationRecord).where(CertificationRecord.id == cert_id)
+        select(CertificationRecord).where(CertificationRecord.id == cert_id, CertificationRecord.is_deleted == False)
     )
     cert = result.scalar_one_or_none()
     if not cert:
@@ -563,6 +747,32 @@ async def update_certification(
     for field, value in payload.model_dump(exclude_unset=True).items():
         setattr(cert, field, value)
     await db.flush()
+    return cert
+
+
+@router.delete("/certifications/{cert_id}", dependencies=[Depends(RoleChecker("admin", "manager"))])
+async def delete_certification(cert_id: int, db: AsyncSession = Depends(get_db)):
+    result = await db.execute(select(CertificationRecord).where(CertificationRecord.id == cert_id))
+    cert = result.scalar_one_or_none()
+    if not cert or cert.is_deleted:
+        raise HTTPException(status_code=404, detail="Certification record not found")
+    cert.is_deleted = True
+    cert.deleted_at = datetime.now(timezone.utc)
+    await db.commit()
+    return {"message": "Certification record deleted successfully", "id": cert_id}
+
+
+@router.patch("/certifications/{cert_id}/restore")
+async def restore_certification(cert_id: int, db: AsyncSession = Depends(get_db)):
+    result = await db.execute(select(CertificationRecord).where(CertificationRecord.id == cert_id))
+    cert = result.scalar_one_or_none()
+    if not cert:
+        raise HTTPException(status_code=404, detail="Certification record not found")
+    if not cert.is_deleted:
+        raise HTTPException(status_code=400, detail="Certification record is not deleted")
+    cert.is_deleted = False
+    cert.deleted_at = None
+    await db.commit()
     return cert
 
 
@@ -575,7 +785,7 @@ async def list_manuals(
     db: AsyncSession = Depends(get_db),
     page: PaginationParams = Depends(),
 ):
-    stmt = select(UserManual)
+    stmt = select(UserManual).where(UserManual.is_deleted == False)
     if product:
         stmt = stmt.where(UserManual.product.ilike(f"%{product}%"))
     if status_filter:
@@ -594,7 +804,7 @@ async def create_manual(payload: UserManualCreate, db: AsyncSession = Depends(ge
 
 @router.get("/manuals/{manual_id}", response_model=UserManualResponse)
 async def get_manual(manual_id: int, db: AsyncSession = Depends(get_db)):
-    result = await db.execute(select(UserManual).where(UserManual.id == manual_id))
+    result = await db.execute(select(UserManual).where(UserManual.id == manual_id, UserManual.is_deleted == False))
     manual = result.scalar_one_or_none()
     if not manual:
         raise HTTPException(status_code=404, detail="User manual not found")
@@ -607,13 +817,39 @@ async def update_manual(
     payload: UserManualUpdate,
     db: AsyncSession = Depends(get_db),
 ):
-    result = await db.execute(select(UserManual).where(UserManual.id == manual_id))
+    result = await db.execute(select(UserManual).where(UserManual.id == manual_id, UserManual.is_deleted == False))
     manual = result.scalar_one_or_none()
     if not manual:
         raise HTTPException(status_code=404, detail="User manual not found")
     for field, value in payload.model_dump(exclude_unset=True).items():
         setattr(manual, field, value)
     await db.flush()
+    return manual
+
+
+@router.delete("/manuals/{manual_id}", dependencies=[Depends(RoleChecker("admin", "manager"))])
+async def delete_manual(manual_id: int, db: AsyncSession = Depends(get_db)):
+    result = await db.execute(select(UserManual).where(UserManual.id == manual_id))
+    manual = result.scalar_one_or_none()
+    if not manual or manual.is_deleted:
+        raise HTTPException(status_code=404, detail="User manual not found")
+    manual.is_deleted = True
+    manual.deleted_at = datetime.now(timezone.utc)
+    await db.commit()
+    return {"message": "User manual deleted successfully", "id": manual_id}
+
+
+@router.patch("/manuals/{manual_id}/restore")
+async def restore_manual(manual_id: int, db: AsyncSession = Depends(get_db)):
+    result = await db.execute(select(UserManual).where(UserManual.id == manual_id))
+    manual = result.scalar_one_or_none()
+    if not manual:
+        raise HTTPException(status_code=404, detail="User manual not found")
+    if not manual.is_deleted:
+        raise HTTPException(status_code=400, detail="User manual is not deleted")
+    manual.is_deleted = False
+    manual.deleted_at = None
+    await db.commit()
     return manual
 
 
@@ -626,7 +862,7 @@ async def list_video_tutorials(
     db: AsyncSession = Depends(get_db),
     page: PaginationParams = Depends(),
 ):
-    stmt = select(VideoTutorial)
+    stmt = select(VideoTutorial).where(VideoTutorial.is_deleted == False)
     if course_id is not None:
         stmt = stmt.where(VideoTutorial.course_id == course_id)
     if status_filter:
@@ -646,7 +882,7 @@ async def create_video_tutorial(payload: VideoTutorialCreate, db: AsyncSession =
 @router.get("/video-tutorials/{tutorial_id}", response_model=VideoTutorialResponse)
 async def get_video_tutorial(tutorial_id: int, db: AsyncSession = Depends(get_db)):
     result = await db.execute(
-        select(VideoTutorial).where(VideoTutorial.id == tutorial_id)
+        select(VideoTutorial).where(VideoTutorial.id == tutorial_id, VideoTutorial.is_deleted == False)
     )
     tutorial = result.scalar_one_or_none()
     if not tutorial:
@@ -661,7 +897,7 @@ async def update_video_tutorial(
     db: AsyncSession = Depends(get_db),
 ):
     result = await db.execute(
-        select(VideoTutorial).where(VideoTutorial.id == tutorial_id)
+        select(VideoTutorial).where(VideoTutorial.id == tutorial_id, VideoTutorial.is_deleted == False)
     )
     tutorial = result.scalar_one_or_none()
     if not tutorial:
@@ -672,13 +908,39 @@ async def update_video_tutorial(
     return tutorial
 
 
+@router.delete("/video-tutorials/{tutorial_id}", dependencies=[Depends(RoleChecker("admin", "manager"))])
+async def delete_video_tutorial(tutorial_id: int, db: AsyncSession = Depends(get_db)):
+    result = await db.execute(select(VideoTutorial).where(VideoTutorial.id == tutorial_id))
+    tutorial = result.scalar_one_or_none()
+    if not tutorial or tutorial.is_deleted:
+        raise HTTPException(status_code=404, detail="Video tutorial not found")
+    tutorial.is_deleted = True
+    tutorial.deleted_at = datetime.now(timezone.utc)
+    await db.commit()
+    return {"message": "Video tutorial deleted successfully", "id": tutorial_id}
+
+
+@router.patch("/video-tutorials/{tutorial_id}/restore")
+async def restore_video_tutorial(tutorial_id: int, db: AsyncSession = Depends(get_db)):
+    result = await db.execute(select(VideoTutorial).where(VideoTutorial.id == tutorial_id))
+    tutorial = result.scalar_one_or_none()
+    if not tutorial:
+        raise HTTPException(status_code=404, detail="Video tutorial not found")
+    if not tutorial.is_deleted:
+        raise HTTPException(status_code=400, detail="Video tutorial is not deleted")
+    tutorial.is_deleted = False
+    tutorial.deleted_at = None
+    await db.commit()
+    return tutorial
+
+
 # ─── Business Logic Endpoints ────────────────────────────────────────────
 
 @router.get("/courses/{course_id}/effectiveness", response_model=TrainingEffectivenessResponse)
 async def get_training_effectiveness(course_id: int, db: AsyncSession = Depends(get_db)):
     """Calculate training effectiveness metrics (avg score, completion rate)."""
     # Verify course exists
-    course_result = await db.execute(select(Course).where(Course.id == course_id))
+    course_result = await db.execute(select(Course).where(Course.id == course_id, Course.is_deleted == False))
     if not course_result.scalar_one_or_none():
         raise HTTPException(status_code=404, detail="Course not found")
     return await calculate_training_effectiveness(db, course_id)

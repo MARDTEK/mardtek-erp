@@ -51,6 +51,8 @@ class PerformanceIndicator(Base):
     frequency: Mapped[Frequency] = mapped_column(Enum(Frequency), default=Frequency.MONTHLY)
     owner: Mapped[Optional[str]] = mapped_column(String(255))
     is_active: Mapped[bool] = mapped_column(Boolean, default=True)
+    is_deleted: Mapped[bool] = mapped_column(default=False)
+    deleted_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True, default=None)
 
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), default=lambda: datetime.now(timezone.utc)
@@ -89,6 +91,8 @@ class PerformanceDataRecord(Base):
     )
     recorded_by: Mapped[str] = mapped_column(String(255), nullable=False)
     notes: Mapped[Optional[str]] = mapped_column(Text)
+    is_deleted: Mapped[bool] = mapped_column(default=False)
+    deleted_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True, default=None)
 
     indicator: Mapped[PerformanceIndicator] = relationship(back_populates="data_records")
 
@@ -107,6 +111,8 @@ class KpiReport(Base):
     period_start: Mapped[date] = mapped_column(Date, nullable=False)
     period_end: Mapped[date] = mapped_column(Date, nullable=False)
     indicators_data: Mapped[Optional[Any]] = mapped_column(JSON)  # list of {indicator_id, name, value, target, status}
+    is_deleted: Mapped[bool] = mapped_column(default=False)
+    deleted_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True, default=None)
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), default=lambda: datetime.now(timezone.utc)
     )
@@ -126,6 +132,8 @@ class PerformanceDashboard(Base):
     layout: Mapped[Optional[Any]] = mapped_column(JSON)
     filters: Mapped[Optional[Any]] = mapped_column(JSON)
     is_default: Mapped[bool] = mapped_column(Boolean, default=False)
+    is_deleted: Mapped[bool] = mapped_column(default=False)
+    deleted_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True, default=None)
 
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), default=lambda: datetime.now(timezone.utc)
@@ -156,6 +164,8 @@ class TrendAnalysisReport(Base):
     change_percent: Mapped[Optional[float]] = mapped_column(Float)
     insights: Mapped[Optional[str]] = mapped_column(Text)
     recommendations: Mapped[Optional[str]] = mapped_column(Text)
+    is_deleted: Mapped[bool] = mapped_column(default=False)
+    deleted_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True, default=None)
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), default=lambda: datetime.now(timezone.utc)
     )

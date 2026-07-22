@@ -109,7 +109,7 @@ class TestDocuments:
             f"/api/v1/quality/documents/{created['id']}",
             headers=_auth(admin_token),
         )
-        assert resp.status_code == 204
+        assert resp.status_code == 200
 
         get_resp = await client.get(
             f"/api/v1/quality/documents/{created['id']}",
@@ -353,7 +353,7 @@ class TestNonConformities:
             f"/api/v1/quality/non-conformities/{created['id']}",
             headers=_auth(admin_token),
         )
-        assert resp.status_code == 204
+        assert resp.status_code == 200
 
 
 class TestCorrectiveActions:
@@ -483,7 +483,7 @@ class TestProcessOwners:
             f"/api/v1/quality/process-owners/{po_id}",
             headers=_auth(admin_token),
         )
-        assert del_resp.status_code == 204
+        assert del_resp.status_code == 200
 
 
 class TestImprovements:

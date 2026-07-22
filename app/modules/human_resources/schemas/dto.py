@@ -219,6 +219,38 @@ class LaborIncidentResponse(BaseModel):
     model_config = {"from_attributes": True}
 
 
+# ─── State Transition Schemas ─────────────────────────────────────────────
+
+class PersonnelRequestTransition(BaseModel):
+    target_status: str
+
+
+class PerformanceEvaluationTransition(BaseModel):
+    target_status: str
+
+
+# ─── CompetencyAssessment ──────────────────────────────────────────────────
+
+class CompetencyAssessmentCreate(BaseModel):
+    employee_id: int
+    skill: str
+    assessed_level: str
+    required_level: str
+    has_gap: bool = True
+
+
+class CompetencyAssessmentResponse(BaseModel):
+    id: int
+    employee_id: int
+    skill: str
+    assessed_level: str
+    required_level: str
+    has_gap: bool
+    assessed_at: datetime
+
+    model_config = {"from_attributes": True}
+
+
 # ─── StaffRegister (REG-P7-001) ───────────────────────────────────────────
 
 class StaffRegisterCreate(BaseModel):

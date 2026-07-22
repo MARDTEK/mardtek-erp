@@ -49,6 +49,22 @@ class OnboardingStatus(str, enum.Enum):
     COMPLETED = "completed"
 
 
+class ProposalStatus(str, enum.Enum):
+    DRAFT = "draft"
+    SENT = "sent"
+    NEGOTIATION = "negotiation"
+    ACCEPTED = "accepted"
+    REJECTED = "rejected"
+    EXPIRED = "expired"
+
+
+class ContractStatus(str, enum.Enum):
+    ACTIVE = "active"
+    SUSPENDED = "suspended"
+    COMPLETED = "completed"
+    TERMINATED = "terminated"
+
+
 # ─── Models ──────────────────────────────────────────────────────────────
 
 class Lead(Base):
@@ -130,7 +146,7 @@ class Proposal(Base):
     total_amount: Mapped[Decimal] = mapped_column(Numeric(12, 2), nullable=False)
     lines: Mapped[dict] = mapped_column(JSON, default=list)  # List of {description, qty, unit_price, total}
 
-    status: Mapped[str] = mapped_column(String(20), default="draft")  # draft, sent, accepted, rejected
+    status: Mapped[ProposalStatus] = mapped_column(Enum(ProposalStatus), default=ProposalStatus.DRAFT)
     valid_until: Mapped[Optional[date]] = mapped_column(Date)
 
     sent_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True))
@@ -174,7 +190,7 @@ class Contract(Base):
     monthly_value: Mapped[Optional[Decimal]] = mapped_column(Numeric(10, 2))
 
     sla_clauses: Mapped[Optional[str]] = mapped_column(Text)
-    status: Mapped[str] = mapped_column(String(20), default="active")  # active, completed, terminated
+    status: Mapped[ContractStatus] = mapped_column(Enum(ContractStatus), default=ContractStatus.ACTIVE)
 
     # Relationships
     subscription: Mapped[Optional["SaasSubscription"]] = relationship(back_populates="contract", uselist=False)

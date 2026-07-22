@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from datetime import date
+from datetime import date, datetime, timezone
 from typing import List, Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
@@ -56,7 +56,7 @@ async def list_indicators(
     db: AsyncSession = Depends(get_db),
     page: PaginationParams = Depends(),
 ):
-    stmt = select(PerformanceIndicator)
+    stmt = select(PerformanceIndicator).where(PerformanceIndicator.is_deleted == False)
     if process_code:
         stmt = stmt.where(PerformanceIndicator.process_code == process_code)
     if is_active is not None:
@@ -76,7 +76,7 @@ async def create_indicator(payload: IndicatorCreate, db: AsyncSession = Depends(
 @router.get("/indicators/{indicator_id}", response_model=IndicatorResponse)
 async def get_indicator(indicator_id: int, db: AsyncSession = Depends(get_db)):
     result = await db.execute(
-        select(PerformanceIndicator).where(PerformanceIndicator.id == indicator_id)
+        select(PerformanceIndicator).where(PerformanceIndicator.id == indicator_id, PerformanceIndicator.is_deleted == False)
     )
     indicator = result.scalar_one_or_none()
     if not indicator:
@@ -91,7 +91,7 @@ async def update_indicator(
     db: AsyncSession = Depends(get_db),
 ):
     result = await db.execute(
-        select(PerformanceIndicator).where(PerformanceIndicator.id == indicator_id)
+        select(PerformanceIndicator).where(PerformanceIndicator.id == indicator_id, PerformanceIndicator.is_deleted == False)
     )
     indicator = result.scalar_one_or_none()
     if not indicator:
@@ -102,16 +102,34 @@ async def update_indicator(
     return indicator
 
 
-@router.delete("/indicators/{indicator_id}", status_code=status.HTTP_204_NO_CONTENT, dependencies=[Depends(RoleChecker("admin", "manager"))])
+@router.delete("/indicators/{indicator_id}", dependencies=[Depends(RoleChecker("admin", "manager"))])
 async def delete_indicator(indicator_id: int, db: AsyncSession = Depends(get_db)):
+    result = await db.execute(
+        select(PerformanceIndicator).where(PerformanceIndicator.id == indicator_id)
+    )
+    indicator = result.scalar_one_or_none()
+    if not indicator or indicator.is_deleted:
+        raise HTTPException(status_code=404, detail="Indicator not found")
+    indicator.is_deleted = True
+    indicator.deleted_at = datetime.now(timezone.utc)
+    await db.commit()
+    return {"message": "Indicator deleted successfully", "id": indicator_id}
+
+
+@router.patch("/indicators/{indicator_id}/restore")
+async def restore_indicator(indicator_id: int, db: AsyncSession = Depends(get_db)):
     result = await db.execute(
         select(PerformanceIndicator).where(PerformanceIndicator.id == indicator_id)
     )
     indicator = result.scalar_one_or_none()
     if not indicator:
         raise HTTPException(status_code=404, detail="Indicator not found")
-    await db.delete(indicator)
-    await db.flush()
+    if not indicator.is_deleted:
+        raise HTTPException(status_code=400, detail="Indicator is not deleted")
+    indicator.is_deleted = False
+    indicator.deleted_at = None
+    await db.commit()
+    return indicator
 
 
 # ─── Performance Data Records ────────────────────────────────────────────
@@ -125,7 +143,7 @@ async def list_data_records(
 ):
     stmt = (
         select(PerformanceDataRecord)
-        .where(PerformanceDataRecord.indicator_id == indicator_id)
+        .where(PerformanceDataRecord.indicator_id == indicator_id, PerformanceDataRecord.is_deleted == False)
     )
     if period:
         stmt = stmt.where(PerformanceDataRecord.period == period)
@@ -145,7 +163,7 @@ async def submit_data_record(
 ):
     # Verify indicator exists
     ind_result = await db.execute(
-        select(PerformanceIndicator).where(PerformanceIndicator.id == indicator_id)
+        select(PerformanceIndicator).where(PerformanceIndicator.id == indicator_id, PerformanceIndicator.is_deleted == False)
     )
     indicator = ind_result.scalar_one_or_none()
     if not indicator:
@@ -192,14 +210,14 @@ async def get_trend_analysis(
 ):
     # Verify indicator exists
     ind_result = await db.execute(
-        select(PerformanceIndicator).where(PerformanceIndicator.id == indicator_id)
+        select(PerformanceIndicator).where(PerformanceIndicator.id == indicator_id, PerformanceIndicator.is_deleted == False)
     )
     if not ind_result.scalar_one_or_none():
         raise HTTPException(status_code=404, detail="Indicator not found")
 
     stmt = (
         select(PerformanceDataRecord)
-        .where(PerformanceDataRecord.indicator_id == indicator_id)
+        .where(PerformanceDataRecord.indicator_id == indicator_id, PerformanceDataRecord.is_deleted == False)
     )
     if from_period:
         stmt = stmt.where(PerformanceDataRecord.period >= from_period)
@@ -226,7 +244,7 @@ async def list_trend_reports(
     db: AsyncSession = Depends(get_db),
     page: PaginationParams = Depends(),
 ):
-    stmt = select(TrendAnalysisReport)
+    stmt = select(TrendAnalysisReport).where(TrendAnalysisReport.is_deleted == False)
     if indicator_id:
         stmt = stmt.where(TrendAnalysisReport.indicator_id == indicator_id)
     result = await db.execute(paginate(stmt.order_by(TrendAnalysisReport.created_at.desc()), page))
@@ -248,11 +266,37 @@ async def create_trend_report(payload: TrendAnalysisCreate, db: AsyncSession = D
 @router.get("/trend-reports/{report_id}", response_model=TrendAnalysisResponse)
 async def get_trend_report(report_id: int, db: AsyncSession = Depends(get_db)):
     result = await db.execute(
-        select(TrendAnalysisReport).where(TrendAnalysisReport.id == report_id)
+        select(TrendAnalysisReport).where(TrendAnalysisReport.id == report_id, TrendAnalysisReport.is_deleted == False)
     )
     report = result.scalar_one_or_none()
     if not report:
         raise HTTPException(status_code=404, detail="Trend analysis report not found")
+    return report
+
+
+@router.delete("/trend-reports/{report_id}", dependencies=[Depends(RoleChecker("admin", "manager"))])
+async def delete_trend_report(report_id: int, db: AsyncSession = Depends(get_db)):
+    result = await db.execute(select(TrendAnalysisReport).where(TrendAnalysisReport.id == report_id))
+    report = result.scalar_one_or_none()
+    if not report or report.is_deleted:
+        raise HTTPException(status_code=404, detail="Trend analysis report not found")
+    report.is_deleted = True
+    report.deleted_at = datetime.now(timezone.utc)
+    await db.commit()
+    return {"message": "Trend analysis report deleted successfully", "id": report_id}
+
+
+@router.patch("/trend-reports/{report_id}/restore")
+async def restore_trend_report(report_id: int, db: AsyncSession = Depends(get_db)):
+    result = await db.execute(select(TrendAnalysisReport).where(TrendAnalysisReport.id == report_id))
+    report = result.scalar_one_or_none()
+    if not report:
+        raise HTTPException(status_code=404, detail="Trend analysis report not found")
+    if not report.is_deleted:
+        raise HTTPException(status_code=400, detail="Trend analysis report is not deleted")
+    report.is_deleted = False
+    report.deleted_at = None
+    await db.commit()
     return report
 
 
@@ -265,7 +309,7 @@ async def list_kpi_reports(
     db: AsyncSession = Depends(get_db),
     page: PaginationParams = Depends(),
 ):
-    stmt = select(KpiReport)
+    stmt = select(KpiReport).where(KpiReport.is_deleted == False)
     if period_start:
         stmt = stmt.where(KpiReport.period_start >= period_start)
     if period_end:
@@ -289,11 +333,37 @@ async def create_kpi_report(payload: KpiReportCreate, db: AsyncSession = Depends
 @router.get("/kpi-reports/{report_id}", response_model=KpiReportResponse)
 async def get_kpi_report(report_id: int, db: AsyncSession = Depends(get_db)):
     result = await db.execute(
-        select(KpiReport).where(KpiReport.id == report_id)
+        select(KpiReport).where(KpiReport.id == report_id, KpiReport.is_deleted == False)
     )
     report = result.scalar_one_or_none()
     if not report:
         raise HTTPException(status_code=404, detail="KPI report not found")
+    return report
+
+
+@router.delete("/kpi-reports/{report_id}", dependencies=[Depends(RoleChecker("admin", "manager"))])
+async def delete_kpi_report(report_id: int, db: AsyncSession = Depends(get_db)):
+    result = await db.execute(select(KpiReport).where(KpiReport.id == report_id))
+    report = result.scalar_one_or_none()
+    if not report or report.is_deleted:
+        raise HTTPException(status_code=404, detail="KPI report not found")
+    report.is_deleted = True
+    report.deleted_at = datetime.now(timezone.utc)
+    await db.commit()
+    return {"message": "KPI report deleted successfully", "id": report_id}
+
+
+@router.patch("/kpi-reports/{report_id}/restore")
+async def restore_kpi_report(report_id: int, db: AsyncSession = Depends(get_db)):
+    result = await db.execute(select(KpiReport).where(KpiReport.id == report_id))
+    report = result.scalar_one_or_none()
+    if not report:
+        raise HTTPException(status_code=404, detail="KPI report not found")
+    if not report.is_deleted:
+        raise HTTPException(status_code=400, detail="KPI report is not deleted")
+    report.is_deleted = False
+    report.deleted_at = None
+    await db.commit()
     return report
 
 
@@ -306,7 +376,7 @@ async def get_consolidated_report(
     # Get all distinct process codes from active indicators
     processes_result = await db.execute(
         select(PerformanceIndicator.process_code)
-        .where(PerformanceIndicator.is_active.is_(True))
+        .where(PerformanceIndicator.is_active.is_(True), PerformanceIndicator.is_deleted == False)
         .distinct()
         .order_by(PerformanceIndicator.process_code)
     )
@@ -334,7 +404,7 @@ async def list_dashboards(
     db: AsyncSession = Depends(get_db),
     page: PaginationParams = Depends(),
 ):
-    stmt = select(PerformanceDashboard)
+    stmt = select(PerformanceDashboard).where(PerformanceDashboard.is_deleted == False)
     if is_default is not None:
         stmt = stmt.where(PerformanceDashboard.is_default == is_default)
     result = await db.execute(paginate(stmt.order_by(PerformanceDashboard.code), page))
@@ -356,7 +426,7 @@ async def create_dashboard(payload: DashboardCreate, db: AsyncSession = Depends(
 @router.get("/dashboards/{dashboard_id}", response_model=DashboardResponse)
 async def get_dashboard(dashboard_id: int, db: AsyncSession = Depends(get_db)):
     result = await db.execute(
-        select(PerformanceDashboard).where(PerformanceDashboard.id == dashboard_id)
+        select(PerformanceDashboard).where(PerformanceDashboard.id == dashboard_id, PerformanceDashboard.is_deleted == False)
     )
     dashboard = result.scalar_one_or_none()
     if not dashboard:
@@ -371,7 +441,7 @@ async def update_dashboard(
     db: AsyncSession = Depends(get_db),
 ):
     result = await db.execute(
-        select(PerformanceDashboard).where(PerformanceDashboard.id == dashboard_id)
+        select(PerformanceDashboard).where(PerformanceDashboard.id == dashboard_id, PerformanceDashboard.is_deleted == False)
     )
     dashboard = result.scalar_one_or_none()
     if not dashboard:
@@ -382,16 +452,34 @@ async def update_dashboard(
     return dashboard
 
 
-@router.delete("/dashboards/{dashboard_id}", status_code=status.HTTP_204_NO_CONTENT, dependencies=[Depends(RoleChecker("admin", "manager"))])
+@router.delete("/dashboards/{dashboard_id}", dependencies=[Depends(RoleChecker("admin", "manager"))])
 async def delete_dashboard(dashboard_id: int, db: AsyncSession = Depends(get_db)):
+    result = await db.execute(
+        select(PerformanceDashboard).where(PerformanceDashboard.id == dashboard_id)
+    )
+    dashboard = result.scalar_one_or_none()
+    if not dashboard or dashboard.is_deleted:
+        raise HTTPException(status_code=404, detail="Dashboard not found")
+    dashboard.is_deleted = True
+    dashboard.deleted_at = datetime.now(timezone.utc)
+    await db.commit()
+    return {"message": "Dashboard deleted successfully", "id": dashboard_id}
+
+
+@router.patch("/dashboards/{dashboard_id}/restore")
+async def restore_dashboard(dashboard_id: int, db: AsyncSession = Depends(get_db)):
     result = await db.execute(
         select(PerformanceDashboard).where(PerformanceDashboard.id == dashboard_id)
     )
     dashboard = result.scalar_one_or_none()
     if not dashboard:
         raise HTTPException(status_code=404, detail="Dashboard not found")
-    await db.delete(dashboard)
-    await db.flush()
+    if not dashboard.is_deleted:
+        raise HTTPException(status_code=400, detail="Dashboard is not deleted")
+    dashboard.is_deleted = False
+    dashboard.deleted_at = None
+    await db.commit()
+    return dashboard
 
 
 @router.get("/dashboards/executive", response_model=ExecutiveDashboardResponse)
@@ -399,14 +487,14 @@ async def get_executive_dashboard(db: AsyncSession = Depends(get_db)):
     """Consolidated view with all active KPIs grouped by process and default dashboards."""
     # Fetch dashboards
     dashboards_result = await db.execute(
-        select(PerformanceDashboard).order_by(PerformanceDashboard.code)
+        select(PerformanceDashboard).where(PerformanceDashboard.is_deleted == False).order_by(PerformanceDashboard.code)
     )
     dashboards = list(dashboards_result.scalars().all())
 
     # Fetch all active indicators grouped by process
     indicators_result = await db.execute(
         select(PerformanceIndicator)
-        .where(PerformanceIndicator.is_active.is_(True))
+        .where(PerformanceIndicator.is_active.is_(True), PerformanceIndicator.is_deleted == False)
         .order_by(PerformanceIndicator.process_code, PerformanceIndicator.code)
     )
     indicators = list(indicators_result.scalars().all())

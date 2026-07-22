@@ -75,7 +75,7 @@ class TestProductRoadmaps:
             f"/api/v1/development/roadmaps/{created['id']}",
             headers=_auth(admin_token),
         )
-        assert resp.status_code == 204
+        assert resp.status_code == 200
 
         get_resp = await client.get(
             f"/api/v1/development/roadmaps/{created['id']}",
@@ -151,7 +151,7 @@ class TestReleasePlans:
             f"/api/v1/development/releases/{created['id']}",
             headers=_auth(admin_token),
         )
-        assert resp.status_code == 204
+        assert resp.status_code == 200
 
 
 class TestTechnicalSpecifications:
@@ -216,7 +216,7 @@ class TestTechnicalSpecifications:
             f"/api/v1/development/specifications/{created['id']}",
             headers=_auth(admin_token),
         )
-        assert resp.status_code == 204
+        assert resp.status_code == 200
 
 
 class TestRiskMatrices:
@@ -280,7 +280,7 @@ class TestRiskMatrices:
             f"/api/v1/development/risk-matrices/{created['id']}",
             headers=_auth(admin_token),
         )
-        assert resp.status_code == 204
+        assert resp.status_code == 200
 
 
 class TestQATestReports:
@@ -350,7 +350,7 @@ class TestQATestReports:
             f"/api/v1/development/qa-reports/{created['id']}",
             headers=_auth(admin_token),
         )
-        assert resp.status_code == 204
+        assert resp.status_code == 200
 
 
 class TestDeploymentRecords:
@@ -469,7 +469,7 @@ class TestUATSignOffs:
             f"/api/v1/development/uat-signoffs/{created['id']}",
             headers=_auth(admin_token),
         )
-        assert resp.status_code == 204
+        assert resp.status_code == 200
 
 
 class TestSolutionSunsets:
@@ -537,7 +537,7 @@ class TestSolutionSunsets:
             f"/api/v1/development/sunsets/{created['id']}",
             headers=_auth(admin_token),
         )
-        assert resp.status_code == 204
+        assert resp.status_code == 200
 
 
 class TestTechDevelopmentAuth:

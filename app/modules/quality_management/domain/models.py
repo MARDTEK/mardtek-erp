@@ -81,6 +81,8 @@ class Document(Base):
     approved_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True))
     next_review_at: Mapped[Optional[date]] = mapped_column(Date)
 
+    is_deleted: Mapped[bool] = mapped_column(default=False)
+    deleted_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True, default=None)
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), default=lambda: datetime.now(timezone.utc)
     )
@@ -115,6 +117,8 @@ class NonConformity(Base):
         DateTime(timezone=True), default=lambda: datetime.now(timezone.utc)
     )
     closed_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True))
+    is_deleted: Mapped[bool] = mapped_column(default=False)
+    deleted_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True, default=None)
 
     # Relationship
     corrective_actions: Mapped[List[CorrectiveAction]] = relationship(
@@ -146,6 +150,8 @@ class CorrectiveAction(Base):
         DateTime(timezone=True), default=lambda: datetime.now(timezone.utc)
     )
     completed_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True))
+    is_deleted: Mapped[bool] = mapped_column(default=False)
+    deleted_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True, default=None)
 
     non_conformity: Mapped[NonConformity] = relationship(back_populates="corrective_actions")
 
@@ -173,6 +179,8 @@ class InternalAudit(Base):
     findings_summary: Mapped[Optional[str]] = mapped_column(Text)
     report_url: Mapped[Optional[str]] = mapped_column(String(500))
 
+    is_deleted: Mapped[bool] = mapped_column(default=False)
+    deleted_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True, default=None)
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), default=lambda: datetime.now(timezone.utc)
     )
@@ -201,6 +209,8 @@ class AuditChecklistItem(Base):
     nc_id: Mapped[Optional[int]] = mapped_column(
         Integer, ForeignKey("quality_non_conformities.id")
     )
+    is_deleted: Mapped[bool] = mapped_column(default=False)
+    deleted_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True, default=None)
 
     audit: Mapped[InternalAudit] = relationship(back_populates="checklist_items")
 
@@ -220,6 +230,8 @@ class ProcessOwner(Base):
     role: Mapped[str] = mapped_column(String(255), nullable=False)
     since_date: Mapped[date] = mapped_column(Date, nullable=False)
     is_active: Mapped[bool] = mapped_column(Boolean, default=True)
+    is_deleted: Mapped[bool] = mapped_column(default=False)
+    deleted_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True, default=None)
 
     def __repr__(self) -> str:
         return f"<ProcessOwner {self.process_code} — {self.owner_name}>"
@@ -247,6 +259,8 @@ class ContinuousImprovement(Base):
         DateTime(timezone=True), default=lambda: datetime.now(timezone.utc)
     )
     implemented_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True))
+    is_deleted: Mapped[bool] = mapped_column(default=False)
+    deleted_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True, default=None)
 
     def __repr__(self) -> str:
         return f"<ContinuousImprovement {self.code} [{self.status.value}]>"

@@ -19,6 +19,7 @@ class PurchaseRequestStatus(str, enum.Enum):
     APPROVED = "approved"
     REJECTED = "rejected"
     ORDERED = "ordered"
+    CANCELLED = "cancelled"
 
 
 class SupplierStatus(str, enum.Enum):
