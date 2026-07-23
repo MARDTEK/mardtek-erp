@@ -4,7 +4,7 @@ import enum
 from datetime import date, datetime, timezone
 from typing import Optional
 
-from sqlalchemy import JSON, Date, DateTime, Enum, Float, ForeignKey, Integer, Numeric, String, Text
+from sqlalchemy import JSON, Boolean, Date, DateTime, Enum, Float, ForeignKey, Integer, Numeric, String, Text
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.core.database import Base
@@ -121,6 +121,11 @@ class Course(Base):
     modality: Mapped[CourseModality] = mapped_column(Enum(CourseModality), nullable=False)
     duration_hours: Mapped[int] = mapped_column(Integer, nullable=False)
     content: Mapped[str] = mapped_column(Text, nullable=False)
+    
+    # Commercial fields
+    is_sellable: Mapped[bool] = mapped_column(Boolean, default=False)
+    base_price: Mapped[float] = mapped_column(Numeric(12, 2), default=0.00)
+    
     status: Mapped[CourseStatus] = mapped_column(Enum(CourseStatus), default=CourseStatus.DRAFT)
     is_deleted: Mapped[bool] = mapped_column(default=False)
     deleted_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True, default=None)

@@ -27,6 +27,7 @@ class LeadStatus(str, enum.Enum):
 class ContractType(str, enum.Enum):
     SOW = "sow"           # Statement of Work (SERVICIOS)
     SUBSCRIPTION = "subscription"  # SaaS
+    TRAINING = "training" # Capacitaciones
 
 
 class SubscriptionTier(str, enum.Enum):

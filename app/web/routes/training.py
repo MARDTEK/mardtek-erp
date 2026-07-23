@@ -74,6 +74,8 @@ async def create_course(
     modality: str = Form(...),
     duration_hours: int = Form(...),
     content: str = Form(""),
+    is_sellable: bool = Form(False),
+    base_price: float = Form(0.0),
     db: AsyncSession = Depends(get_db),
     user=Depends(get_current_user_from_session),
 ):
@@ -83,6 +85,8 @@ async def create_course(
         modality=modality,
         duration_hours=duration_hours,
         content=content,
+        is_sellable=is_sellable,
+        base_price=base_price,
         status="draft"
     )
     db.add(course)
@@ -140,6 +144,8 @@ async def edit_course(
     duration_hours: int = Form(...),
     content: str = Form(""),
     status: str = Form("draft"),
+    is_sellable: bool = Form(False),
+    base_price: float = Form(0.0),
     db: AsyncSession = Depends(get_db),
     user=Depends(get_current_user_from_session),
 ):
@@ -155,6 +161,8 @@ async def edit_course(
     course.duration_hours = duration_hours
     course.content = content
     course.status = status
+    course.is_sellable = is_sellable
+    course.base_price = base_price
     
     await db.commit()
     return _redirect(f"/training/courses/{course_id}")
