@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% from 'macros.html' import status_badge %}
+{% from 'macros.html' import status_badge, product_line_badge %}
 {% block title %}{{ item.company }} — Leads{% endblock %}
 {% block page_title %}Lead — {{ item.company }}{% endblock %}
 
@@ -8,24 +8,30 @@
   <!-- Header -->
   <div class="flex items-start justify-between">
     <div>
-      <p class="text-secondary-500 text-sm">{{ item.source }} | {{ item.product_line }}</p>
+      <p class="text-secondary-500 text-sm">{{ item.source }}</p>
+      <div class="flex items-center gap-2 mt-1">{{ product_line_badge(item.product_line) }}</div>
       <h2 class="text-xl font-bold text-gray-900 mt-1">{{ item.company }}</h2>
       <p class="text-sm text-secondary-500 mt-1">{{ item.contact_name }} &mdash; {{ item.contact_email }}</p>
     </div>
     <div class="flex items-center gap-2">
       {{ status_badge(item.status.value if item.status.value is defined else item.status) }}
-      {% if item.status.value in ('new', 'qualifying') %}
-      <form method="post" action="/commercial/leads/{{ item.id }}/qualify" class="inline">
-        <input type="hidden" name="icp_match_score" value="">
-        <button type="submit" class="px-3 py-1.5 bg-blue-600 text-white text-xs rounded-lg hover:bg-blue-700">Qualify</button>
-      </form>
-      {% endif %}
-      {% if item.status.value not in ('won', 'lost', 'disqualified') %}
-      <form method="post" action="/commercial/leads/{{ item.id }}/win" class="inline">
-        <button type="submit" class="px-3 py-1.5 bg-emerald-600 text-white text-xs rounded-lg hover:bg-emerald-700">Mark Won</button>
-      </form>
-      {% endif %}
+      <a href="/commercial/leads/{{ item.id }}/edit"
+         class="px-3 py-1.5 bg-secondary-100 text-secondary-700 text-xs rounded-lg hover:bg-secondary-200">Edit</a>
     </div>
+  </div>
+
+  <!-- Quick status change -->
+  <div class="bg-white rounded-lg border p-3">
+    <form method="post" action="/commercial/leads/{{ item.id }}/status" class="flex items-center gap-3">
+      <label class="text-xs font-medium text-secondary-500 uppercase tracking-wider">Status:</label>
+      <select name="status" class="px-2 py-1 border border-secondary-200 rounded text-xs">
+        {% set current = item.status.value if item.status.value is defined else item.status %}
+        {% for val, label in [('new','New'),('qualifying','Qualifying'),('qualified','Qualified'),('proposal','Proposal'),('negotiation','Negotiation'),('won','Won'),('lost','Lost'),('disqualified','Disqualified')] %}
+        <option value="{{ val }}" {{ 'selected' if current == val }}>{{ label }}</option>
+        {% endfor %}
+      </select>
+      <button type="submit" class="px-3 py-1 bg-primary-600 text-white text-xs rounded hover:bg-primary-700">Change</button>
+    </form>
   </div>
 
   <!-- Details grid -->
@@ -42,7 +48,7 @@
   </div>
 
   <!-- Related sections -->
-  <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+  <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
     <a href="/commercial/leads/{{ item.id }}/discovery"
        class="bg-white rounded-lg border p-4 hover:border-primary-300 transition-colors">
       <h3 class="text-sm font-semibold text-secondary-700">Discovery</h3>
@@ -52,6 +58,11 @@
        class="bg-white rounded-lg border p-4 hover:border-primary-300 transition-colors">
       <h3 class="text-sm font-semibold text-secondary-700">Proposals</h3>
       <p class="text-xs text-secondary-500 mt-1">{{ item.proposals | length }} proposal{{ 's' if item.proposals | length != 1 }}</p>
+    </a>
+    <a href="/commercial/leads/{{ item.id }}/quotes"
+       class="bg-white rounded-lg border p-4 hover:border-primary-300 transition-colors">
+      <h3 class="text-sm font-semibold text-secondary-700">Quotes</h3>
+      <p class="text-xs text-secondary-500 mt-1">Pricing &amp; quotes</p>
     </a>
     <div class="bg-white rounded-lg border p-4">
       <h3 class="text-sm font-semibold text-secondary-700">Pipeline Stage</h3>

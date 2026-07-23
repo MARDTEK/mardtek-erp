@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% from 'macros.html' import status_badge %}
+{% from 'macros.html' import status_badge, contract_type_badge %}
 {% block title %}{{ item.contract_number }} — Contracts{% endblock %}
 {% block page_title %}Contract — {{ item.contract_number }}{% endblock %}
 
@@ -8,7 +8,7 @@
   <!-- Header -->
   <div class="flex items-start justify-between">
     <div>
-      <p class="text-secondary-500 text-sm">{{ (item.contract_type.value if item.contract_type.value is defined else item.contract_type) | upper }}</p>
+      <div class="flex items-center gap-2 mt-1">{{ contract_type_badge(item.contract_type) }}</div>
       <h2 class="text-xl font-bold text-gray-900 mt-1">{{ item.contract_number }}</h2>
       <p class="text-lg font-semibold text-primary-600 mt-1">{{ '${:,.2f}'.format(item.total_value) }}</p>
     </div>
@@ -26,16 +26,30 @@
       <div><dt class="text-secondary-500">Monthly Value</dt><dd class="font-medium mt-1">{{ '${:,.2f}'.format(item.monthly_value) if item.monthly_value else '—' }}</dd></div>
       <div><dt class="text-secondary-500">Signed At</dt><dd class="font-medium mt-1">{{ item.signed_at.strftime('%Y-%m-%d %H:%M') }}</dd></div>
       <div><dt class="text-secondary-500">SLA Clauses</dt><dd class="font-medium mt-1">{{ item.sla_clauses or '—' }}</dd></div>
+      {% if item.churned_at %}
+      <div><dt class="text-secondary-500">Terminated At</dt><dd class="font-medium mt-1 text-red-600">{{ item.churned_at.strftime('%Y-%m-%d %H:%M') }}</dd></div>
+      <div><dt class="text-secondary-500">Churn Reason</dt><dd class="font-medium mt-1 text-red-600">{{ item.churn_reason or '—' }}</dd></div>
+      {% endif %}
     </dl>
   </div>
 
   <!-- Quick links -->
-  <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+  <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+    {% set ct = item.contract_type.value if item.contract_type.value is defined else item.contract_type %}
+    {% if ct == 'subscription' or ct == 'SUBSCRIPTION' %}
     <a href="/commercial/contracts/{{ item.id }}/subscription"
        class="bg-white rounded-lg border p-4 hover:border-primary-300 transition-colors">
       <h3 class="text-sm font-semibold text-secondary-700">Subscription</h3>
       <p class="text-xs text-secondary-500 mt-1">{{ 'Active' if item.subscription else 'Not applicable' }}</p>
     </a>
+    {% endif %}
+    {% if ct == 'sow' or ct == 'SOW' %}
+    <a href="/commercial/contracts/{{ item.id }}/service-churn"
+       class="bg-white rounded-lg border p-4 hover:border-primary-300 transition-colors">
+      <h3 class="text-sm font-semibold text-secondary-700">Churn Analysis</h3>
+      <p class="text-xs text-secondary-500 mt-1">SOW termination analysis</p>
+    </a>
+    {% endif %}
     <a href="/commercial/contracts/{{ item.id }}/onboarding"
        class="bg-white rounded-lg border p-4 hover:border-primary-300 transition-colors">
       <h3 class="text-sm font-semibold text-secondary-700">Onboarding</h3>
@@ -45,6 +59,11 @@
        class="bg-white rounded-lg border p-4 hover:border-primary-300 transition-colors">
       <h3 class="text-sm font-semibold text-secondary-700">Account Plans</h3>
       <p class="text-xs text-secondary-500 mt-1">Manage account strategy</p>
+    </a>
+    <a href="/commercial/contracts/{{ item.id }}/handoffs"
+       class="bg-white rounded-lg border p-4 hover:border-primary-300 transition-colors">
+      <h3 class="text-sm font-semibold text-secondary-700">Handoffs</h3>
+      <p class="text-xs text-secondary-500 mt-1">Transfer to P4/P5</p>
     </a>
   </div>
 

@@ -12,6 +12,25 @@
 </span>
 {%- endmacro %}
 
+{% macro product_line_badge(product_line) -%}
+<span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold uppercase tracking-wide
+  {% if product_line == 'SAAS' %}bg-indigo-100 text-indigo-700
+  {% elif product_line == 'SERVICIOS' %}bg-amber-100 text-amber-700
+  {% else %}bg-secondary-100 text-secondary-600{% endif %}">
+  {{ product_line }}
+</span>
+{%- endmacro %}
+
+{% macro contract_type_badge(contract_type) -%}
+{% set ct = contract_type.value if contract_type.value is defined else contract_type %}
+<span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold uppercase tracking-wide
+  {% if ct == 'subscription' or ct == 'SUBSCRIPTION' %}bg-indigo-100 text-indigo-700
+  {% elif ct == 'sow' or ct == 'SOW' %}bg-amber-100 text-amber-700
+  {% else %}bg-secondary-100 text-secondary-600{% endif %}">
+  {{ ct | upper }}
+</span>
+{%- endmacro %}
+
 {% macro severity_badge(severity) -%}
 <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium
   {% if severity == 'critical' %}bg-red-100 text-red-700

@@ -1,4 +1,4 @@
-{% from 'macros.html' import status_badge, pagination %}
+{% from 'macros.html' import status_badge, contract_type_badge, pagination %}
 
 {% if items %}
 <div class="bg-white rounded-lg border overflow-hidden">
@@ -19,7 +19,7 @@
       <tr class="hover:bg-gray-50 cursor-pointer transition-colors"
           onclick="window.location='/commercial/contracts/{{ item.id }}'">
         <td class="px-4 py-3 text-sm font-medium text-primary-600">{{ item.contract_number }}</td>
-        <td class="px-4 py-3 text-sm text-secondary-500">{{ (item.contract_type.value if item.contract_type.value is defined else item.contract_type) | upper }}</td>
+        <td class="px-4 py-3">{{ contract_type_badge(item.contract_type) }}</td>
         <td class="px-4 py-3 text-sm text-secondary-700">{{ '${:,.2f}'.format(item.total_value) }}</td>
         <td class="px-4 py-3 text-sm text-secondary-500">{{ '${:,.2f}'.format(item.monthly_value) if item.monthly_value else '—' }}</td>
         <td class="px-4 py-3 text-sm text-secondary-500">{{ item.start_date.strftime('%Y-%m-%d') }}</td>
