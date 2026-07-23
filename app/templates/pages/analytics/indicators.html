@@ -1,0 +1,64 @@
+{% extends "base.html" %}
+{% from 'macros.html' import status_badge, pagination, search_form, empty_state %}
+{% block title %}Performance Indicators — Analytics{% endblock %}
+{% block page_title %}Performance Indicators{% endblock %}
+
+{% block content %}
+<div class="space-y-4">
+  <div class="flex items-center justify-between">
+    <div>
+      <p class="text-sm text-secondary-500">{{ total }} indicator{{ 's' if total != 1 }}</p>
+    </div>
+    <div class="flex items-center gap-2">
+      <a href="/analytics/kpi-reports"
+         class="px-4 py-2 border border-secondary-200 text-secondary-700 rounded-lg text-sm font-medium hover:bg-secondary-50 transition-colors">
+        KPI Reports
+      </a>
+      <a href="/analytics/dashboards"
+         class="px-4 py-2 border border-secondary-200 text-secondary-700 rounded-lg text-sm font-medium hover:bg-secondary-50 transition-colors">
+        Dashboards
+      </a>
+      <a href="/analytics/indicators/create"
+         class="px-4 py-2 bg-primary-600 text-white rounded-lg text-sm font-medium hover:bg-primary-700 transition-colors">
+        + New Indicator
+      </a>
+    </div>
+  </div>
+
+  {{ search_form('/analytics/indicators', search) }}
+
+  <!-- Filters -->
+  <div class="flex gap-4">
+    <select hx-get="/analytics/indicators/table"
+            hx-trigger="change"
+            hx-target="#table-container"
+            hx-include="#search-input"
+            name="process_code"
+            class="px-3 py-2 border border-secondary-200 rounded-lg text-sm">
+      <option value="">All Processes</option>
+      {% for code, name in process_names.items() %}
+      <option value="{{ code }}" {{ 'selected' if process_code == code }}>{{ code }} — {{ name }}</option>
+      {% endfor %}
+    </select>
+    <select hx-get="/analytics/indicators/table"
+            hx-trigger="change"
+            hx-target="#table-container"
+            hx-include="#search-input"
+            name="is_active"
+            class="px-3 py-2 border border-secondary-200 rounded-lg text-sm">
+      <option value="">All Status</option>
+      <option value="true" {{ 'selected' if is_active == 'true' }}>Active</option>
+      <option value="false" {{ 'selected' if is_active == 'false' }}>Inactive</option>
+    </select>
+  </div>
+
+  <input type="hidden" id="search-input" name="search" value="{{ search }}">
+
+  <div id="table-container"
+       hx-get="/analytics/indicators/table?page={{ page }}{% if search %}&search={{ search }}{% endif %}{% if process_code %}&process_code={{ process_code }}{% endif %}{% if is_active %}&is_active={{ is_active }}{% endif %}"
+       hx-trigger="load"
+       hx-swap="innerHTML">
+    <div class="animate-pulse text-secondary-400 text-sm py-8 text-center">Loading indicators...</div>
+  </div>
+</div>
+{% endblock %}

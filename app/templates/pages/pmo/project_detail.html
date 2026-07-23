@@ -1,0 +1,195 @@
+{% extends "base.html" %}
+{% from 'macros.html' import status_badge, empty_state %}
+{% block title %}Project: {{ project.code }} — PMO{% endblock %}
+{% block page_title %}Project Dashboard{% endblock %}
+
+{% block content %}
+<div class="space-y-6">
+  <!-- Header -->
+  <div class="flex items-start justify-between">
+    <div>
+      <div class="flex items-center gap-3 mb-1">
+        <h1 class="text-2xl font-bold text-secondary-900">{{ project.code }}</h1>
+        {{ status_badge(project.status.value) }}
+      </div>
+      <p class="text-lg text-secondary-600">{{ project.name }}</p>
+    </div>
+    <div class="flex gap-2">
+      <a href="/pmo/projects" class="px-4 py-2 bg-white border border-secondary-200 text-secondary-700 rounded-lg text-sm font-medium hover:bg-secondary-50 transition-colors">
+        Back to List
+      </a>
+      <!-- Placeholder for Edit or Actions -->
+      <button class="px-4 py-2 bg-secondary-100 text-secondary-700 rounded-lg text-sm font-medium hover:bg-secondary-200 transition-colors">
+        Actions ▾
+      </button>
+    </div>
+  </div>
+
+  <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+    
+    <!-- Left Column: Info & Reports -->
+    <div class="lg:col-span-2 space-y-6">
+      
+      <!-- Project Details -->
+      <div class="bg-white rounded-xl border p-6">
+        <h3 class="text-sm font-semibold text-secondary-900 uppercase tracking-wider mb-4">Project Details</h3>
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-6">
+          <div>
+            <p class="text-xs text-secondary-500 mb-1">Product Line</p>
+            <p class="text-sm font-medium">{{ project.product_line.value }}</p>
+          </div>
+          <div>
+            <p class="text-xs text-secondary-500 mb-1">Project Manager</p>
+            <p class="text-sm font-medium">{{ project.project_manager }}</p>
+          </div>
+          <div>
+            <p class="text-xs text-secondary-500 mb-1">Start Date</p>
+            <p class="text-sm font-medium">{{ project.start_date }}</p>
+          </div>
+          <div>
+            <p class="text-xs text-secondary-500 mb-1">Budget</p>
+            <p class="text-sm font-medium">${{ project.budget or '0.00' }}</p>
+          </div>
+        </div>
+        {% if project.description %}
+        <div class="mt-6 pt-6 border-t border-secondary-100">
+          <p class="text-xs text-secondary-500 mb-1">Description / Scope</p>
+          <p class="text-sm text-secondary-700">{{ project.description }}</p>
+        </div>
+        {% endif %}
+      </div>
+
+      <!-- Weekly Reports -->
+      <div class="bg-white rounded-xl border p-6" x-data="{ showReportForm: false }">
+        <div class="flex items-center justify-between mb-4">
+          <h3 class="text-sm font-semibold text-secondary-900 uppercase tracking-wider">Weekly Progress Reports</h3>
+          <button @click="showReportForm = !showReportForm" class="text-sm text-primary-600 hover:text-primary-800 font-medium">
+            + Add Report
+          </button>
+        </div>
+
+        <!-- Add Report Form -->
+        <div x-show="showReportForm" x-collapse class="mb-6 bg-secondary-50 rounded-lg p-4 border border-secondary-100">
+          <form method="post" action="/pmo/projects/{{ project.id }}/reports" class="space-y-4">
+            <div class="grid grid-cols-3 gap-4">
+              <div>
+                <label class="block text-xs font-medium text-secondary-700 mb-1">Week Number</label>
+                <input type="number" name="week_number" required placeholder="e.g. 42" class="w-full px-3 py-1.5 border border-secondary-200 rounded text-sm">
+              </div>
+              <div>
+                <label class="block text-xs font-medium text-secondary-700 mb-1">Year</label>
+                <input type="number" name="year" required value="2026" class="w-full px-3 py-1.5 border border-secondary-200 rounded text-sm">
+              </div>
+              <div>
+                <label class="block text-xs font-medium text-secondary-700 mb-1">Completion %</label>
+                <input type="number" name="status_percent" min="0" max="100" value="0" class="w-full px-3 py-1.5 border border-secondary-200 rounded text-sm">
+              </div>
+            </div>
+            <div>
+              <label class="block text-xs font-medium text-secondary-700 mb-1">Accomplishments</label>
+              <textarea name="accomplishments" required rows="2" class="w-full px-3 py-1.5 border border-secondary-200 rounded text-sm"></textarea>
+            </div>
+            <div>
+              <label class="block text-xs font-medium text-secondary-700 mb-1">Next Week Plan</label>
+              <textarea name="next_week_plan" required rows="2" class="w-full px-3 py-1.5 border border-secondary-200 rounded text-sm"></textarea>
+            </div>
+            <div>
+              <label class="block text-xs font-medium text-secondary-700 mb-1">Blockers / Risks</label>
+              <textarea name="blockers" rows="1" class="w-full px-3 py-1.5 border border-secondary-200 rounded text-sm"></textarea>
+            </div>
+            <div class="flex justify-end gap-2">
+              <button type="button" @click="showReportForm = false" class="px-3 py-1.5 text-xs font-medium text-secondary-600 hover:bg-secondary-100 rounded">Cancel</button>
+              <button type="submit" class="px-3 py-1.5 text-xs font-medium bg-primary-600 text-white rounded hover:bg-primary-700">Save Report</button>
+            </div>
+          </form>
+        </div>
+
+        <!-- Reports List -->
+        <div class="space-y-4">
+          {% if reports %}
+            {% for report in reports %}
+            <div class="p-4 border border-secondary-100 rounded-lg hover:bg-secondary-50 transition-colors">
+              <div class="flex items-center justify-between mb-2">
+                <span class="text-sm font-semibold text-secondary-900">Week {{ report.week_number }}, {{ report.year }}</span>
+                <span class="text-xs font-medium px-2 py-1 bg-green-100 text-green-800 rounded-full">{{ report.status_percent }}% Complete</span>
+              </div>
+              <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-3">
+                <div>
+                  <p class="text-xs font-medium text-secondary-500 uppercase">Accomplishments</p>
+                  <p class="text-sm text-secondary-700 mt-1 whitespace-pre-line">{{ report.accomplishments }}</p>
+                </div>
+                <div>
+                  <p class="text-xs font-medium text-secondary-500 uppercase">Next Week</p>
+                  <p class="text-sm text-secondary-700 mt-1 whitespace-pre-line">{{ report.next_week_plan }}</p>
+                </div>
+              </div>
+              {% if report.blockers %}
+              <div class="mt-3 p-3 bg-red-50 border border-red-100 rounded text-sm text-red-800">
+                <span class="font-semibold text-red-900">Blockers:</span> {{ report.blockers }}
+              </div>
+              {% endif %}
+            </div>
+            {% endfor %}
+          {% else %}
+            <p class="text-sm text-secondary-500 text-center py-4">No weekly reports recorded yet.</p>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+
+    <!-- Right Column: Sidebar -->
+    <div class="space-y-6">
+      <!-- Execution Plan Summary -->
+      <div class="bg-white rounded-xl border p-6">
+        <h3 class="text-sm font-semibold text-secondary-900 uppercase tracking-wider mb-4">Execution Plans</h3>
+        {% if project.execution_plans %}
+          <div class="space-y-3">
+            {% for plan in project.execution_plans %}
+            <div class="p-3 border border-secondary-100 rounded bg-secondary-50">
+              <div class="flex items-center justify-between">
+                <span class="text-sm font-medium">Plan #{{ plan.id }}</span>
+                {{ status_badge(plan.status.value) }}
+              </div>
+              <p class="text-xs text-secondary-500 mt-1">{{ plan.phases|length }} phases defined</p>
+            </div>
+            {% endfor %}
+          </div>
+        {% else %}
+          <div class="text-center py-4">
+            <p class="text-sm text-secondary-500 mb-3">No execution plan defined.</p>
+            <button class="px-3 py-1.5 text-xs font-medium bg-white border border-secondary-200 rounded text-secondary-700 hover:bg-secondary-50">
+              Create Plan
+            </button>
+          </div>
+        {% endif %}
+      </div>
+      
+      <!-- Quick Links -->
+      <div class="bg-white rounded-xl border p-6">
+        <h3 class="text-sm font-semibold text-secondary-900 uppercase tracking-wider mb-4">Related Documents</h3>
+        <ul class="space-y-2">
+          <li>
+            <a href="#" class="flex items-center text-sm text-primary-600 hover:text-primary-800 group">
+              <span class="w-1.5 h-1.5 rounded-full bg-primary-400 mr-2 group-hover:bg-primary-600 transition-colors"></span>
+              Change Requests
+            </a>
+          </li>
+          <li>
+            <a href="#" class="flex items-center text-sm text-primary-600 hover:text-primary-800 group">
+              <span class="w-1.5 h-1.5 rounded-full bg-primary-400 mr-2 group-hover:bg-primary-600 transition-colors"></span>
+              Deliverables Checklist
+            </a>
+          </li>
+          <li>
+            <a href="#" class="flex items-center text-sm text-primary-600 hover:text-primary-800 group">
+              <span class="w-1.5 h-1.5 rounded-full bg-primary-400 mr-2 group-hover:bg-primary-600 transition-colors"></span>
+              Handover Acceptance
+            </a>
+          </li>
+        </ul>
+      </div>
+
+    </div>
+  </div>
+</div>
+{% endblock %}

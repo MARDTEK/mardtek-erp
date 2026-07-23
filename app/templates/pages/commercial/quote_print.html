@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Print Quote {{ item.quote_number }}</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            primary: { 600: '#2563eb' },
+            secondary: { 500: '#6b7280', 700: '#374151', 900: '#111827' },
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    @media print {
+      body { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+      @page { margin: 20mm; }
+      .no-print { display: none !important; }
+    }
+  </style>
+</head>
+<body class="bg-gray-50 text-gray-900 font-sans p-8 print:p-0 print:bg-white" onload="window.print()">
+  <div class="max-w-4xl mx-auto bg-white p-12 shadow-lg print:shadow-none print:max-w-full">
+    
+    <!-- Action Bar -->
+    <div class="no-print flex justify-end mb-8">
+      <button onclick="window.print()" class="px-4 py-2 bg-primary-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700">
+        Print / Save as PDF
+      </button>
+    </div>
+
+    <!-- Header -->
+    <div class="flex justify-between items-start border-b pb-8 mb-8">
+      <div>
+        <h1 class="text-3xl font-bold text-gray-900 tracking-tight">MARDTEK</h1>
+        <p class="text-sm text-secondary-500 mt-1">Technology Solutions</p>
+      </div>
+      <div class="text-right">
+        <h2 class="text-2xl font-semibold text-gray-900 uppercase tracking-widest">Quote</h2>
+        <p class="text-sm font-medium text-gray-900 mt-2">#{{ item.quote_number }}</p>
+        <p class="text-sm text-secondary-500 mt-1">Date: {{ item.created_at.strftime('%B %d, %Y') }}</p>
+        <p class="text-sm text-secondary-500 mt-1">Valid Until: {{ item.valid_until.strftime('%B %d, %Y') if item.valid_until else 'Open' }}</p>
+      </div>
+    </div>
+
+    <!-- Customer Info -->
+    <div class="grid grid-cols-2 gap-12 mb-12">
+      <div>
+        <h3 class="text-xs font-bold text-secondary-500 uppercase tracking-wider mb-3">Prepared For</h3>
+        {% if item.lead %}
+        <p class="font-semibold text-gray-900">{{ item.lead.company }}</p>
+        <p class="text-sm text-secondary-700 mt-1">{{ item.lead.contact_name }}</p>
+        <p class="text-sm text-secondary-700">{{ item.lead.contact_email }}</p>
+        {% else %}
+        <p class="text-sm text-secondary-700">Lead not associated</p>
+        {% endif %}
+      </div>
+      <div>
+        <h3 class="text-xs font-bold text-secondary-500 uppercase tracking-wider mb-3">Prepared By</h3>
+        <p class="font-semibold text-gray-900">MARDTEK Sales Team</p>
+        <p class="text-sm text-secondary-700 mt-1">{{ item.created_by }}</p>
+      </div>
+    </div>
+
+    <!-- Pricing Table -->
+    <table class="w-full text-left mb-12">
+      <thead>
+        <tr class="border-b-2 border-gray-900">
+          <th class="py-3 text-sm font-bold text-gray-900">Description</th>
+          <th class="py-3 text-sm font-bold text-gray-900 text-right">Amount</th>
+        </tr>
+      </thead>
+      <tbody>
+        <!-- For a real implementation, quotes would have line items. We use the master record here. -->
+        <tr class="border-b border-gray-200">
+          <td class="py-4 text-sm text-gray-800">
+            <p class="font-medium">Services / Licensing Fee</p>
+            {% if item.notes %}
+            <p class="text-xs text-secondary-500 mt-1">{{ item.notes }}</p>
+            {% endif %}
+          </td>
+          <td class="py-4 text-sm text-gray-900 text-right font-medium">${{ '{:,.2f}'.format(item.subtotal) }}</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <!-- Totals -->
+    <div class="flex justify-end">
+      <div class="w-1/2">
+        <div class="flex justify-between py-2 border-b border-gray-200">
+          <span class="text-sm text-secondary-700">Subtotal</span>
+          <span class="text-sm font-medium text-gray-900">${{ '{:,.2f}'.format(item.subtotal) }}</span>
+        </div>
+        {% if item.discount_percent > 0 %}
+        <div class="flex justify-between py-2 border-b border-gray-200">
+          <span class="text-sm text-secondary-700">Discount ({{ item.discount_percent }}%)</span>
+          <span class="text-sm font-medium text-red-600">-${{ '{:,.2f}'.format(item.discount_amount) }}</span>
+        </div>
+        {% endif %}
+        <div class="flex justify-between py-2 border-b border-gray-200">
+          <span class="text-sm text-secondary-700">Tax ({{ item.tax_rate }}%)</span>
+          <span class="text-sm font-medium text-gray-900">${{ '{:,.2f}'.format(item.tax_amount) }}</span>
+        </div>
+        <div class="flex justify-between py-3 border-b-2 border-gray-900">
+          <span class="text-base font-bold text-gray-900">Total ({{ item.currency }})</span>
+          <span class="text-base font-bold text-gray-900">${{ '{:,.2f}'.format(item.total) }}</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Footer -->
+    <div class="mt-16 pt-8 border-t text-xs text-secondary-500">
+      <p class="font-semibold text-gray-900 mb-2">Terms & Conditions</p>
+      <p>This quote is valid until the date specified above. Pricing is subject to change if the scope of work or project requirements are altered. Payment terms will be specified in the final contract or Statement of Work (SOW).</p>
+    </div>
+  </div>
+</body>
+</html>

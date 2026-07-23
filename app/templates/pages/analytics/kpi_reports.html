@@ -1,0 +1,57 @@
+{% extends "base.html" %}
+{% from 'macros.html' import status_badge, pagination, search_form %}
+{% block title %}KPI Reports — Analytics{% endblock %}
+{% block page_title %}KPI Reports{% endblock %}
+
+{% block content %}
+<div class="space-y-4">
+  <div class="flex items-center justify-between">
+    <div>
+      <p class="text-sm text-secondary-500">{{ total }} report{{ 's' if total != 1 }}</p>
+    </div>
+    <div class="flex items-center gap-2">
+      <a href="/analytics/indicators"
+         class="px-4 py-2 border border-secondary-200 text-secondary-700 rounded-lg text-sm font-medium hover:bg-secondary-50 transition-colors">
+        Indicators
+      </a>
+      <a href="/analytics/kpi-reports/create"
+         class="px-4 py-2 bg-primary-600 text-white rounded-lg text-sm font-medium hover:bg-primary-700 transition-colors">
+        + New Report
+      </a>
+    </div>
+  </div>
+
+  {{ search_form('/analytics/kpi-reports', search) }}
+
+  <!-- Period filters -->
+  <div class="flex gap-4">
+    <div class="flex items-center gap-2">
+      <label class="text-sm text-secondary-500">From:</label>
+      <input type="date" name="period_start" value="{{ period_start }}"
+             hx-get="/analytics/kpi-reports/table"
+             hx-trigger="change"
+             hx-target="#table-container"
+             hx-include="[name='period_end'],#search-input-reports"
+             class="px-3 py-2 border border-secondary-200 rounded-lg text-sm">
+    </div>
+    <div class="flex items-center gap-2">
+      <label class="text-sm text-secondary-500">To:</label>
+      <input type="date" name="period_end" value="{{ period_end }}"
+             hx-get="/analytics/kpi-reports/table"
+             hx-trigger="change"
+             hx-target="#table-container"
+             hx-include="[name='period_start'],#search-input-reports"
+             class="px-3 py-2 border border-secondary-200 rounded-lg text-sm">
+    </div>
+  </div>
+
+  <input type="hidden" id="search-input-reports" name="search" value="{{ search }}">
+
+  <div id="table-container"
+       hx-get="/analytics/kpi-reports/table?page={{ page }}{% if search %}&search={{ search }}{% endif %}{% if period_start %}&period_start={{ period_start }}{% endif %}{% if period_end %}&period_end={{ period_end }}{% endif %}"
+       hx-trigger="load"
+       hx-swap="innerHTML">
+    <div class="animate-pulse text-secondary-400 text-sm py-8 text-center">Loading reports...</div>
+  </div>
+</div>
+{% endblock %}

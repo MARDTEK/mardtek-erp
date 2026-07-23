@@ -1,0 +1,63 @@
+{% extends "base.html" %}
+{% block title %}{{ item.code }} — Dashboards{% endblock %}
+{% block page_title %}Dashboard — {{ item.code }}{% endblock %}
+
+{% block content %}
+<div class="space-y-6">
+  <!-- Header -->
+  <div class="flex items-start justify-between">
+    <div>
+      <p class="text-secondary-500 text-sm font-mono">{{ item.code }}</p>
+      <h2 class="text-xl font-bold text-gray-900 mt-1">{{ item.title }}</h2>
+      {% if item.is_default %}
+      <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-primary-100 text-primary-700 mt-2">Default Dashboard</span>
+      {% endif %}
+    </div>
+  </div>
+
+  <!-- Details -->
+  <div class="bg-white rounded-lg border p-6">
+    <dl class="grid grid-cols-2 gap-4 text-sm">
+      <div><dt class="text-secondary-500">Code</dt><dd class="font-medium mt-1 font-mono">{{ item.code }}</dd></div>
+      <div><dt class="text-secondary-500">Default</dt><dd class="font-medium mt-1">{{ 'Yes' if item.is_default else 'No' }}</dd></div>
+      <div class="col-span-2">
+        <dt class="text-secondary-500">Layout</dt>
+        <dd class="font-medium mt-1">
+          {% if item.layout %}
+          <div class="bg-gray-50 rounded-lg p-3 font-mono text-xs overflow-auto max-h-64">
+            {{ item.layout | tojson(indent=2) }}
+          </div>
+          {% else %}
+          <span class="text-secondary-400">No layout configured</span>
+          {% endif %}
+        </dd>
+      </div>
+      <div class="col-span-2">
+        <dt class="text-secondary-500">Filters</dt>
+        <dd class="font-medium mt-1">
+          {% if item.filters %}
+          <div class="bg-gray-50 rounded-lg p-3 font-mono text-xs overflow-auto max-h-64">
+            {{ item.filters | tojson(indent=2) }}
+          </div>
+          {% else %}
+          <span class="text-secondary-400">No filters configured</span>
+          {% endif %}
+        </dd>
+      </div>
+      <div><dt class="text-secondary-500">Created</dt><dd class="font-medium mt-1">{{ item.created_at.strftime('%Y-%m-%d %H:%M') }}</dd></div>
+      <div><dt class="text-secondary-500">Updated</dt><dd class="font-medium mt-1">{{ item.updated_at.strftime('%Y-%m-%d %H:%M') }}</dd></div>
+    </dl>
+  </div>
+
+  <!-- Delete form -->
+  <div class="bg-white rounded-lg border p-4">
+    <form method="post" action="/analytics/dashboards/{{ item.id }}/delete"
+          onsubmit="return confirm('Delete this dashboard?')">
+      <button type="submit" class="px-4 py-2 bg-red-600 text-white text-sm rounded-lg hover:bg-red-700">Delete Dashboard</button>
+    </form>
+  </div>
+
+  <!-- Back link -->
+  <a href="/analytics/dashboards" class="text-sm text-primary-600 hover:text-primary-800">&larr; Back to Dashboards</a>
+</div>
+{% endblock %}

@@ -1,0 +1,40 @@
+{% from 'macros.html' import status_badge, pagination, empty_state %}
+
+{% if items %}
+<div class="bg-white rounded-xl border overflow-hidden">
+  <div class="overflow-x-auto">
+    <table class="w-full text-left text-sm whitespace-nowrap">
+      <thead class="bg-secondary-50 text-secondary-500 uppercase tracking-wider text-xs">
+        <tr>
+          <th class="px-6 py-4 font-medium">Project Code</th>
+          <th class="px-6 py-4 font-medium">Name</th>
+          <th class="px-6 py-4 font-medium">Product Line</th>
+          <th class="px-6 py-4 font-medium">Project Manager</th>
+          <th class="px-6 py-4 font-medium">Start Date</th>
+          <th class="px-6 py-4 font-medium">Status</th>
+        </tr>
+      </thead>
+      <tbody class="divide-y divide-secondary-100">
+        {% for item in items %}
+        <tr class="hover:bg-secondary-50 transition-colors cursor-pointer"
+          onclick="window.location='/pmo/projects/{{ item.id }}'">
+          <td class="px-6 py-4 font-medium text-secondary-900">{{ item.code }}</td>
+          <td class="px-6 py-4 text-secondary-600">{{ item.name }}</td>
+          <td class="px-6 py-4 text-secondary-600">{{ item.product_line.value }}</td>
+          <td class="px-6 py-4 text-secondary-600">{{ item.project_manager }}</td>
+          <td class="px-6 py-4 text-secondary-500">{{ item.start_date }}</td>
+          <td class="px-6 py-4">{{ status_badge(item.status.value) }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% if total_pages > 1 %}
+  <div class="p-4 border-t border-secondary-100 bg-secondary-50/50">
+    {{ pagination(page, total_pages, '/pmo/projects', search) }}
+  </div>
+  {% endif %}
+</div>
+{% else %}
+{{ empty_state('No projects found') }}
+{% endif %}

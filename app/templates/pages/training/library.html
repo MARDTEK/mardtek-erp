@@ -1,0 +1,91 @@
+{% extends "base.html" %}
+{% from 'macros.html' import status_badge %}
+{% block title %}Training Library — MARDTEK ERP{% endblock %}
+{% block page_title %}Training Content Library{% endblock %}
+
+{% block content %}
+<div class="space-y-8" x-data="{ tab: 'manuals' }">
+  
+  <!-- Tabs -->
+  <div class="border-b border-gray-200">
+    <nav class="-mb-px flex space-x-8">
+      <button @click="tab = 'manuals'" :class="{ 'border-primary-500 text-primary-600': tab === 'manuals', 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300': tab !== 'manuals' }" class="whitespace-nowrap pb-4 px-1 border-b-2 font-medium text-sm transition-colors">
+        User Manuals ({{ manuals|length }})
+      </button>
+      <button @click="tab = 'videos'" :class="{ 'border-primary-500 text-primary-600': tab === 'videos', 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300': tab !== 'videos' }" class="whitespace-nowrap pb-4 px-1 border-b-2 font-medium text-sm transition-colors">
+        Video Tutorials ({{ videos|length }})
+      </button>
+    </nav>
+  </div>
+
+  <!-- Manuals Tab -->
+  <div x-show="tab === 'manuals'" x-transition>
+    {% if manuals %}
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+      {% for item in manuals %}
+      <div class="bg-white rounded-xl border border-gray-200 p-6 flex flex-col hover:shadow-md transition-shadow">
+        <div class="flex justify-between items-start mb-4">
+          <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-50 text-blue-700">
+            {{ item.code }}
+          </span>
+          {{ status_badge(item.status.value if item.status.value is defined else item.status) }}
+        </div>
+        <h3 class="text-lg font-bold text-gray-900 mb-1">{{ item.title }}</h3>
+        <p class="text-sm text-secondary-500 mb-4">Product: {{ item.product }} | v{{ item.version }}</p>
+        
+        <div class="mt-auto pt-4 border-t border-gray-100">
+          <a href="{{ item.content_url }}" target="_blank" class="text-sm font-medium text-primary-600 hover:text-primary-800 flex items-center gap-1">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/></svg>
+            Open Document
+          </a>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+    {% else %}
+    <div class="bg-gray-50 border border-dashed border-gray-300 rounded-lg p-12 text-center">
+      <p class="text-sm text-gray-500">No user manuals available.</p>
+    </div>
+    {% endif %}
+  </div>
+
+  <!-- Videos Tab -->
+  <div x-show="tab === 'videos'" x-transition style="display: none;">
+    {% if videos %}
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+      {% for item in videos %}
+      <div class="bg-white rounded-xl border border-gray-200 overflow-hidden flex flex-col hover:shadow-md transition-shadow">
+        <div class="aspect-video bg-gray-100 relative group flex items-center justify-center">
+          <!-- Play icon placeholder -->
+          <svg class="w-12 h-12 text-primary-500 opacity-80 group-hover:opacity-100 transition-opacity" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM9.555 7.168A1 1 0 008 8v4a1 1 0 001.555.832l3-2a1 1 0 000-1.664l-3-2z" clip-rule="evenodd"/></svg>
+          <div class="absolute bottom-2 right-2 bg-black/70 text-white text-xs px-2 py-1 rounded">
+            {{ item.duration_minutes }} min
+          </div>
+        </div>
+        <div class="p-5 flex-1 flex flex-col">
+          <div class="flex justify-between items-start mb-2">
+            <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-purple-50 text-purple-700">
+              {{ item.code }}
+            </span>
+          </div>
+          <h3 class="text-base font-bold text-gray-900 mb-1 line-clamp-2">{{ item.title }}</h3>
+          
+          <div class="mt-auto pt-4 flex items-center justify-between">
+            {{ status_badge(item.status.value if item.status.value is defined else item.status) }}
+            <a href="{{ item.url }}" target="_blank" class="text-sm font-medium text-primary-600 hover:text-primary-800">
+              Watch Video
+            </a>
+          </div>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+    {% else %}
+    <div class="bg-gray-50 border border-dashed border-gray-300 rounded-lg p-12 text-center">
+      <p class="text-sm text-gray-500">No video tutorials available.</p>
+    </div>
+    {% endif %}
+  </div>
+
+</div>
+{% endblock %}

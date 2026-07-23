@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+{% from 'macros.html' import status_badge, pagination, search_form, empty_state %}
+{% block title %}PMO Projects{% endblock %}
+{% block page_title %}PMO Projects{% endblock %}
+
+{% block content %}
+<div class="space-y-4">
+  <div class="flex items-center justify-between">
+    <div>
+      <p class="text-sm text-secondary-500">{{ total }} project{{ 's' if total != 1 }}</p>
+    </div>
+    <div class="flex items-center gap-2">
+      <a href="/pmo/projects/create"
+         class="px-4 py-2 bg-primary-600 text-white rounded-lg text-sm font-medium hover:bg-primary-700 transition-colors">
+        + New Project
+      </a>
+    </div>
+  </div>
+
+  {{ search_form('/pmo/projects', search) }}
+
+  <div id="table-container"
+       hx-get="/pmo/projects/table?page={{ page }}{% if search %}&search={{ search }}{% endif %}{% if status %}&status={{ status }}{% endif %}{% if product_line %}&product_line={{ product_line }}{% endif %}"
+       hx-trigger="load"
+       hx-swap="innerHTML">
+    <div class="animate-pulse text-secondary-400 text-sm py-8 text-center">Loading projects...</div>
+  </div>
+
+</div>
+{% endblock %}

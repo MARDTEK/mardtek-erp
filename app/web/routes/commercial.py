@@ -1139,13 +1139,48 @@ async def detail_quote(
     db: AsyncSession = Depends(get_db),
     user=Depends(get_current_user_from_session),
 ):
-    result = await db.execute(select(Quote).where(Quote.id == quote_id))
+    result = await db.execute(select(Quote).options(selectinload(Quote.lead)).where(Quote.id == quote_id))
     item = result.scalar_one_or_none()
     if not item:
         return _redirect("/commercial/leads")
     return render(request, "pages/commercial/quote_detail.html", {
         "item": item,
         "page_title": f"Quote {item.quote_number}",
+    })
+
+
+@router.post("/quotes/{quote_id}/send")
+async def send_quote(
+    request: Request,
+    quote_id: int,
+    db: AsyncSession = Depends(get_db),
+    user=Depends(get_current_user_from_session),
+):
+    result = await db.execute(select(Quote).where(Quote.id == quote_id))
+    quote = result.scalar_one_or_none()
+    if quote and quote.status == "draft":
+        quote.status = "sent"
+        quote.sent_at = datetime.now(timezone.utc)
+        await db.commit()
+    return _redirect(f"/commercial/quotes/{quote_id}")
+
+
+@router.get("/quotes/{quote_id}/print")
+async def print_quote(
+    request: Request,
+    quote_id: int,
+    db: AsyncSession = Depends(get_db),
+    user=Depends(get_current_user_from_session),
+):
+    result = await db.execute(select(Quote).options(selectinload(Quote.lead)).where(Quote.id == quote_id))
+    item = result.scalar_one_or_none()
+    if not item:
+        return _redirect("/commercial/leads")
+    
+    # Render a clean, print-friendly template
+    return render(request, "pages/commercial/quote_print.html", {
+        "item": item,
+        "page_title": f"Print Quote {item.quote_number}",
     })
 
 

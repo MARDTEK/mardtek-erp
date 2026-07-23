@@ -23,14 +23,17 @@ from app.web.routes.quality import router as web_quality_router
 from app.web.routes.strategic import router as web_strategic_router
 from app.web.routes.commercial import router as web_commercial_router
 from app.web.routes.tech_dev import router as web_tech_dev_router
-from app.modules.commercial_sales.router import router as commercial_router
-from app.modules.pmo_projects.router import router as pmo_projects_router
-from app.modules.training_services.router import router as training_router
-from app.modules.strategic_planning.router import router as strategic_router
-from app.modules.quality_management.router import router as quality_router
-from app.modules.tech_development.router import router as tech_development_router
+from app.web.routes.pmo import router as web_pmo_router
+from app.web.routes.training import router as web_training_router
+from app.web.routes.analytics import router as web_analytics_router
+from app.modules.commercial_sales.interfaces.router import router as commercial_router
+from app.modules.pmo_projects.interfaces.router import router as pmo_projects_router
+from app.modules.training_services.interfaces.router import router as training_router
+from app.modules.strategic_planning.interfaces.router import router as strategic_router
+from app.modules.quality_management.interfaces.router import router as quality_router
+from app.modules.tech_development.interfaces.router import router as tech_development_router
 from app.modules.procurement.router import router as procurement_router
-from app.modules.analytics_performance.router import router as analytics_router
+from app.modules.analytics_performance.interfaces.router import router as analytics_router
 from app.modules.customer_experience.router import router as customer_experience_router
 from app.modules.infrastructure_it.router import router as infrastructure_router
 from app.modules.human_resources.router import router as human_resources_router
@@ -94,6 +97,9 @@ app.include_router(web_quality_router)  # Quality Management HTML routes
 app.include_router(web_strategic_router)  # Strategic Planning HTML routes
 app.include_router(web_commercial_router)  # Commercial Sales HTML routes
 app.include_router(web_tech_dev_router)  # Tech Development HTML routes
+app.include_router(web_pmo_router)  # PMO Projects HTML routes
+app.include_router(web_training_router)  # Training Services HTML routes
+app.include_router(web_analytics_router)  # Analytics & Performance HTML routes
 app.include_router(quality_router, prefix="/api/v1/quality", tags=["Quality Management — P2"])
 app.include_router(commercial_router, prefix="/api/v1/commercial", tags=["Commercial Sales — P3"])
 app.include_router(strategic_router, prefix="/api/v1/strategic", tags=["Strategic Management — P1"])

@@ -79,8 +79,8 @@ Each process file contains:
 | **P2** | Quality Management | 7 | 42 | ✅ 33 | ✅ 10 | 42 | **Substantial** |
 | **P3** | Commercial Sales | 15 | 50 | ✅ 63 | ✅ 37 | 26 | **Substantial** |
 | **P4** | Tech Development | 8 | 47 | ✅ 82 | ✅ 31 | 53 | **Substantial** |
-| **P5** | PMO Projects | 8 | 32 | ❌ | ❌ | 29 | **Partial** |
-| **P6** | Training Services | 10 | 62 | ❌ | ❌ | 56 | **Partial** |
+| **P5** | PMO Projects | 8 | 32 | ✅ 5 | ✅ 4 | 29 | **Substantial** |
+| **P6** | Training Services | 10 | 62 | ✅ 5 | ✅ 4 | 56 | **Substantial** |
 | **P7** | Human Resources | 8 | 47 | ❌ | ❌ | 49 | **Partial** |
 | **P8** | Infrastructure/IT | 7 | 29 | ❌ | ❌ | 29 | **Partial** |
 | **P9** | Procurement | 6 | 32 | ❌ | ❌ | 27 | **Partial** |
@@ -95,12 +95,10 @@ Each process file contains:
 
 ### Remaining Work
 
-#### Frontend (7 modules need web UI)
+#### Frontend (5 modules need web UI)
 
 | Module | Web Routes | Templates | Priority |
 |--------|-----------|-----------|----------|
-| P5 PMO Projects | 0 | 0 | High |
-| P6 Training Services | 0 | 0 | High |
 | P7 Human Resources | 0 | 0 | Medium |
 | P8 Infrastructure/IT | 0 | 0 | Medium |
 | P9 Procurement | 0 | 0 | Medium |
@@ -113,6 +111,9 @@ Only P3 has been audited against its OKF bundle. Remaining modules need verifica
 - P1, P2, P4 (substantial modules)
 - P5-P11 (partial modules)
 
-#### Architecture Alignment (all modules)
+#### Architecture Alignment (in progress)
 
-No module currently has hexagonal architecture layers (`application/services.py`, `interfaces/`, `infrastructure/repositories.py`). Business logic lives in `domain/logic.py` and is executed directly in route handlers.
+The target state is Hexagonal Architecture (`application/services.py`, `interfaces/`, `infrastructure/repositories.py`).
+
+- **P1, P2, P3, P4**: ✅ Refactored to Hexagonal Architecture. API routes use Application Services and Repositories.
+- **Other modules (P5-P11)**: ❌ Still need refactoring. Business logic currently lives in `domain/logic.py` and is executed directly in route handlers.

@@ -1,0 +1,77 @@
+{% extends "base.html" %}
+{% from 'macros.html' import status_badge %}
+{% block title %}Training Courses — MARDTEK ERP{% endblock %}
+{% block page_title %}Training Courses{% endblock %}
+
+{% block content %}
+<div class="space-y-6">
+  <!-- Header -->
+  <div class="flex items-center justify-between">
+    <form action="/training/courses" method="get" class="flex items-center gap-4">
+      <div class="relative">
+        <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+          <svg class="h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+        </div>
+        <input type="text" name="search" value="{{ search }}" placeholder="Search courses..." class="pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-primary-500 focus:border-primary-500 text-sm">
+      </div>
+      <select name="modality" onchange="this.form.submit()" class="border-gray-300 rounded-lg text-sm focus:ring-primary-500 focus:border-primary-500 py-2">
+        <option value="">All Modalities</option>
+        <option value="online" {{ 'selected' if modality == 'online' }}>Online</option>
+        <option value="presential" {{ 'selected' if modality == 'presential' }}>Presential</option>
+        <option value="hybrid" {{ 'selected' if modality == 'hybrid' }}>Hybrid</option>
+      </select>
+      <button type="submit" class="hidden">Search</button>
+      {% if search or modality %}
+      <a href="/training/courses" class="text-sm text-secondary-500 hover:text-secondary-700">Clear</a>
+      {% endif %}
+    </form>
+    <a href="/training/courses/create" class="inline-flex items-center gap-2 bg-primary-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-primary-700 transition-colors">
+      <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+      New Course
+    </a>
+  </div>
+
+  <!-- Content -->
+  {% if items %}
+  <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+    {% for item in items %}
+    <a href="/training/courses/{{ item.id }}" class="block group">
+      <div class="bg-white rounded-xl border border-gray-200 p-6 hover:shadow-lg hover:border-primary-300 transition-all">
+        <div class="flex justify-between items-start mb-4">
+          <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-primary-50 text-primary-700">
+            {{ item.code }}
+          </span>
+          {{ status_badge(item.status.value if item.status.value is defined else item.status) }}
+        </div>
+        <h3 class="text-lg font-bold text-gray-900 group-hover:text-primary-600 transition-colors mb-2">{{ item.title }}</h3>
+        <p class="text-sm text-secondary-500 line-clamp-2 mb-4">{{ item.content }}</p>
+        
+        <div class="flex items-center gap-4 text-sm text-secondary-600">
+          <div class="flex items-center gap-1.5">
+            <svg class="w-4 h-4 text-secondary-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+            {{ item.duration_hours }}h
+          </div>
+          <div class="flex items-center gap-1.5 capitalize">
+            <svg class="w-4 h-4 text-secondary-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9"/></svg>
+            {{ item.modality.value if item.modality.value is defined else item.modality }}
+          </div>
+        </div>
+      </div>
+    </a>
+    {% endfor %}
+  </div>
+  {% else %}
+  <div class="bg-white rounded-lg border border-gray-200 p-12 text-center">
+    <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"/></svg>
+    <h3 class="mt-2 text-sm font-medium text-gray-900">No courses</h3>
+    <p class="mt-1 text-sm text-gray-500">Get started by creating a new training course.</p>
+    <div class="mt-6">
+      <a href="/training/courses/create" class="inline-flex items-center gap-2 bg-primary-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-primary-700">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+        New Course
+      </a>
+    </div>
+  </div>
+  {% endif %}
+</div>
+{% endblock %}

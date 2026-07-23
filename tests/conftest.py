@@ -107,14 +107,14 @@ async def client(
     app = FastAPI(title="test")
 
     from app.auth.router import router as auth_router
-    from app.modules.quality_management.router import router as quality_router
-    from app.modules.commercial_sales.router import router as commercial_router
-    from app.modules.pmo_projects.router import router as pmo_projects_router
-    from app.modules.training_services.router import router as training_router
-    from app.modules.strategic_planning.router import router as strategic_router
-    from app.modules.tech_development.router import router as tech_router
+    from app.modules.quality_management.interfaces.router import router as quality_router
+    from app.modules.commercial_sales.interfaces.router import router as commercial_router
+    from app.modules.pmo_projects.interfaces.router import router as pmo_projects_router
+    from app.modules.training_services.interfaces.router import router as training_router
+    from app.modules.strategic_planning.interfaces.router import router as strategic_router
+    from app.modules.tech_development.interfaces.router import router as tech_router
     from app.modules.procurement.router import router as procurement_router
-    from app.modules.analytics_performance.router import router as analytics_router
+    from app.modules.analytics_performance.interfaces.router import router as analytics_router
     from app.modules.customer_experience.router import router as customer_router
     from app.modules.infrastructure_it.router import router as infra_router
     from app.modules.human_resources.router import router as hr_router

@@ -1,0 +1,55 @@
+{% from 'macros.html' import status_badge, pagination %}
+
+{% if items %}
+<div class="bg-white rounded-lg border overflow-hidden">
+  <table class="min-w-full divide-y divide-gray-200">
+    <thead class="bg-gray-50">
+      <tr>
+        <th class="px-4 py-3 text-left text-xs font-semibold text-secondary-600">Code</th>
+        <th class="px-4 py-3 text-left text-xs font-semibold text-secondary-600">Name</th>
+        <th class="px-4 py-3 text-left text-xs font-semibold text-secondary-600">Process</th>
+        <th class="px-4 py-3 text-left text-xs font-semibold text-secondary-600">Target</th>
+        <th class="px-4 py-3 text-left text-xs font-semibold text-secondary-600">Frequency</th>
+        <th class="px-4 py-3 text-left text-xs font-semibold text-secondary-600">Status</th>
+        <th class="px-4 py-3 text-left text-xs font-semibold text-secondary-600">Actions</th>
+      </tr>
+    </thead>
+    <tbody class="divide-y divide-gray-100">
+      {% for item in items %}
+      <tr class="hover:bg-gray-50 transition-colors">
+        <td class="px-4 py-3 text-sm font-medium text-primary-600">
+          <a href="/analytics/indicators/{{ item.id }}">{{ item.code }}</a>
+        </td>
+        <td class="px-4 py-3 text-sm text-secondary-700">{{ item.name }}</td>
+        <td class="px-4 py-3">
+          <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-secondary-100 text-secondary-700">
+            {{ item.process_code }} — {{ process_names.get(item.process_code, item.process_code) }}
+          </span>
+        </td>
+        <td class="px-4 py-3 text-sm text-secondary-700">{{ item.target_value if item.target_value is not none else '—' }} {{ item.unit or '' }}</td>
+        <td class="px-4 py-3 text-sm text-secondary-500">{{ item.frequency.value if item.frequency.value is defined else item.frequency | title }}</td>
+        <td class="px-4 py-3">
+          {% if item.is_active %}
+          <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-emerald-100 text-emerald-700">Active</span>
+          {% else %}
+          <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-secondary-100 text-secondary-600">Inactive</span>
+          {% endif %}
+        </td>
+        <td class="px-4 py-3 text-sm">
+          <div class="flex items-center gap-1">
+            <a href="/analytics/indicators/{{ item.id }}" class="text-primary-600 hover:text-primary-800 text-xs">View</a>
+            <span class="text-secondary-300">|</span>
+            <a href="/analytics/indicators/{{ item.id }}/edit" class="text-secondary-600 hover:text-secondary-800 text-xs">Edit</a>
+          </div>
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{{ pagination(page, total_pages, '/analytics/indicators') }}
+{% else %}
+<div class="text-center py-12 text-secondary-400">
+  <p class="text-sm">No indicators found.</p>
+</div>
+{% endif %}
