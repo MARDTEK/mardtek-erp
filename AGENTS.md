@@ -66,10 +66,10 @@ Each process file contains:
 |--------|-------|
 | SQLAlchemy models | 87 |
 | API endpoints | 413 |
-| Web routes (HTMX) | 215 |
-| Jinja2 templates | 96 |
+| Web routes (HTMX) | 225 |
+| Jinja2 templates | 105 |
 | Tests | 444 |
-| Modules with frontend | 4/11 |
+| Modules with frontend | 7/11 |
 
 ### Module Status
 
@@ -80,12 +80,12 @@ Each process file contains:
 | **P3** | Commercial Sales | 15 | 50 | ✅ 63 | ✅ 37 | 26 | **Substantial** |
 | **P4** | Tech Development | 8 | 47 | ✅ 82 | ✅ 31 | 53 | **Substantial** |
 | **P5** | PMO Projects | 8 | 32 | ✅ 5 | ✅ 4 | 29 | **Substantial** |
-| **P6** | Training Services | 10 | 62 | ✅ 5 | ✅ 4 | 56 | **Substantial** |
+| **P6** | Training Services | 10 | 62 | ✅ 7 | ✅ 5 | 56 | **Substantial** |
 | **P7** | Human Resources | 8 | 47 | ❌ | ❌ | 49 | **Partial** |
 | **P8** | Infrastructure/IT | 7 | 29 | ❌ | ❌ | 29 | **Partial** |
 | **P9** | Procurement | 6 | 32 | ❌ | ❌ | 27 | **Partial** |
 | **P10** | Customer Experience | 7 | 26 | ❌ | ❌ | 40 | **Partial** |
-| **P11** | Analytics/Performance | 5 | 27 | ❌ | ❌ | 32 | **Partial** |
+| **P11** | Analytics/Performance | 5 | 27 | ✅ 8 | ✅ 9 | 32 | **Substantial** |
 
 ### Status Definitions
 
@@ -95,7 +95,7 @@ Each process file contains:
 
 ### Remaining Work
 
-#### Frontend (5 modules need web UI)
+#### Frontend (4 modules need web UI)
 
 | Module | Web Routes | Templates | Priority |
 |--------|-----------|-----------|----------|
@@ -103,17 +103,16 @@ Each process file contains:
 | P8 Infrastructure/IT | 0 | 0 | Medium |
 | P9 Procurement | 0 | 0 | Medium |
 | P10 Customer Experience | 0 | 0 | Low |
-| P11 Analytics/Performance | 0 | 0 | Low |
 
 #### OKF Compliance Verification
 
 Only P3 has been audited against its OKF bundle. Remaining modules need verification:
-- P1, P2, P4 (substantial modules)
-- P5-P11 (partial modules)
+- P1, P2, P4, P5, P6, P11 (substantial modules)
+- P7-P10 (partial modules)
 
 #### Architecture Alignment (in progress)
 
 The target state is Hexagonal Architecture (`application/services.py`, `interfaces/`, `infrastructure/repositories.py`).
 
-- **P1, P2, P3, P4**: ✅ Refactored to Hexagonal Architecture. API routes use Application Services and Repositories.
-- **Other modules (P5-P11)**: ❌ Still need refactoring. Business logic currently lives in `domain/logic.py` and is executed directly in route handlers.
+- **P1, P2, P3, P4, P5, P6, P11**: ✅ Refactored to Hexagonal Architecture. API routes use Application Services and Repositories.
+- **Other modules (P7-P10)**: ❌ Still need refactoring. Business logic currently lives in `domain/logic.py` and is executed directly in route handlers.
