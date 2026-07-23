@@ -10,6 +10,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.modules.commercial_sales.domain.models import (
     Contract,
+    ContractStatus,
     ContractType,
     Lead,
     LeadStatus,
@@ -153,3 +154,20 @@ async def accept_proposal(db: AsyncSession, proposal_id: int) -> Optional[Propos
     proposal.accepted_at = datetime.now(timezone.utc)
     await db.flush()
     return proposal
+
+
+# ─── Service Contract Churn (SERVICIOS) ──────────────────────────────────
+
+async def terminate_service_contract(
+    db: AsyncSession, contract_id: int, reason: str
+) -> Optional[Contract]:
+    """Terminate a SERVICIOS contract with churn reason."""
+    result = await db.execute(select(Contract).where(Contract.id == contract_id))
+    contract = result.scalar_one_or_none()
+    if contract is None or contract.contract_type != ContractType.SOW:
+        return None
+    contract.status = ContractStatus.TERMINATED
+    contract.churned_at = datetime.now(timezone.utc)
+    contract.churn_reason = reason
+    await db.flush()
+    return contract
