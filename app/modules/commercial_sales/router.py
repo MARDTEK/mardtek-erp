@@ -46,6 +46,7 @@ from app.modules.commercial_sales.schemas.dto import (
     ChurnAnalysisResponse,
     CompetitionMatrixCreate,
     CompetitionMatrixResponse,
+    ContractCreate,
     ContractResponse,
     DiscoveryCreate,
     DiscoveryResponse,
@@ -63,6 +64,7 @@ from app.modules.commercial_sales.schemas.dto import (
     ProjectHandoffResponse,
     ProposalCreate,
     ProposalResponse,
+    QuoteAccept,
     QuoteCreate,
     QuoteResponse,
     RetentionActionCreate,
@@ -253,6 +255,27 @@ async def get_contract(contract_id: int, db: AsyncSession = Depends(get_db)):
     contract = result.scalar_one_or_none()
     if not contract:
         raise HTTPException(status_code=404, detail="Contract not found")
+    return contract
+
+
+@router.post("/contracts", response_model=ContractResponse, status_code=201, dependencies=[Depends(RoleChecker("admin", "manager"))])
+async def create_contract(payload: ContractCreate, db: AsyncSession = Depends(get_db)):
+    lead_result = await db.execute(select(Lead).where(Lead.id == payload.lead_id))
+    if not lead_result.scalar_one_or_none():
+        raise HTTPException(status_code=404, detail="Lead not found")
+
+    contract = Contract(
+        **payload.model_dump(),
+        contract_number=f"CTR-{datetime.now(timezone.utc).strftime('%Y%m%d%H%M%S')}",
+        signed_at=datetime.now(timezone.utc),
+    )
+    db.add(contract)
+    await db.flush()
+    await event_bus.emit(Event(
+        name="ContractCreated",
+        payload={"contract_id": contract.id, "contract_type": payload.contract_type},
+        source_module="commercial_sales",
+    ))
     return contract
 
 
@@ -488,6 +511,25 @@ async def send_quote(quote_id: int, db: AsyncSession = Depends(get_db)):
     quote.status = "sent"
     quote.sent_at = datetime.now(timezone.utc)
     await db.flush()
+    return quote
+
+
+@router.post("/quotes/{quote_id}/accept", response_model=QuoteResponse, dependencies=[Depends(RoleChecker("admin", "manager"))])
+async def accept_quote_endpoint(quote_id: int, db: AsyncSession = Depends(get_db)):
+    result = await db.execute(select(Quote).where(Quote.id == quote_id))
+    quote = result.scalar_one_or_none()
+    if not quote:
+        raise HTTPException(status_code=404, detail="Quote not found")
+    if quote.status != "sent":
+        raise HTTPException(status_code=400, detail="Only sent quotes can be accepted")
+    quote.status = "accepted"
+    quote.accepted_at = datetime.now(timezone.utc)
+    await db.flush()
+    await event_bus.emit(Event(
+        name="QuoteAccepted",
+        payload={"quote_id": quote_id, "lead_id": quote.lead_id},
+        source_module="commercial_sales",
+    ))
     return quote
 
 

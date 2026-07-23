@@ -138,6 +138,17 @@ class ContractResponse(BaseModel):
     model_config = {"from_attributes": True}
 
 
+class ContractCreate(BaseModel):
+    lead_id: int
+    proposal_id: Optional[int] = None
+    contract_type: str = Field(..., pattern=r"^(sow|subscription)$")
+    start_date: date
+    end_date: Optional[date] = None
+    total_value: Decimal
+    monthly_value: Optional[Decimal] = None
+    sla_clauses: Optional[str] = None
+
+
 # ─── SaaS Subscription ───────────────────────────────────────────────────
 
 class SubscriptionActivate(BaseModel):
@@ -284,6 +295,11 @@ class QuoteResponse(BaseModel):
     updated_at: datetime
 
     model_config = {"from_attributes": True}
+
+
+class QuoteAccept(BaseModel):
+    """Empty payload for quote acceptance action."""
+    pass
 
 
 # ─── Project Handoff (SOP-P3-006) ──────────────────────────────────────

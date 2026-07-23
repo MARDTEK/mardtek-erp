@@ -68,7 +68,7 @@ class ContractStatus(str, enum.Enum):
 # ─── Models ──────────────────────────────────────────────────────────────
 
 class Lead(Base):
-    """FO-P3-001 | Lead Qualification — tracks prospects through the pipeline."""
+    """SOP-P3-001 | Lead Qualification — tracks prospects through the pipeline."""
 
     __tablename__ = "commercial_leads"
 
@@ -106,7 +106,7 @@ class Lead(Base):
 
 
 class Discovery(Base):
-    """FO-P3-002 | Discovery Questionnaire — needs analysis for a lead."""
+    """SOP-P3-002 | Discovery Questionnaire — needs analysis for a lead."""
 
     __tablename__ = "commercial_discoveries"
 
@@ -205,7 +205,7 @@ class Contract(Base):
 
 
 class SaasSubscription(Base):
-    """SOP-P3-009 | SaaS Subscription — MicroSmart subscription tracking."""
+    """SOP-P3-005 | SaaS Subscription — MicroSmart subscription tracking."""
 
     __tablename__ = "commercial_subscriptions"
 
