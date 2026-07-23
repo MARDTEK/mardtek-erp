@@ -1,0 +1,45 @@
+{% extends "base.html" %}
+{% from 'macros.html' import status_badge %}
+{% block title %}Churn Analysis — {{ item.category }}{% endblock %}
+{% block page_title %}Churn Analysis — {{ item.category }}{% endblock %}
+
+{% block content %}
+<div class="space-y-6">
+  <!-- Header -->
+  <div class="flex items-start justify-between">
+    <div>
+      <p class="text-secondary-500 text-sm">Subscription #{{ item.subscription_id }}</p>
+      <h2 class="text-xl font-bold text-gray-900 mt-1">Churn Analysis</h2>
+      <p class="text-sm text-secondary-500 mt-1">{{ item.analysis_date.strftime('%Y-%m-%d') }} | {{ item.analyzed_by }}</p>
+    </div>
+    <div class="flex items-center gap-2">
+      {{ status_badge(item.category.value if item.category.value is defined else item.category) }}
+    </div>
+  </div>
+
+  <!-- Financial impact -->
+  <div class="bg-white rounded-lg border p-6">
+    <h3 class="text-sm font-semibold text-secondary-700 mb-4">Financial Impact</h3>
+    <dl class="grid grid-cols-2 gap-4 text-sm">
+      <div><dt class="text-secondary-500">Revenue Lost</dt><dd class="font-bold text-lg text-red-600 mt-1">${{ '{:,.2f}'.format(item.revenue_lost) }}</dd></div>
+      <div><dt class="text-secondary-500">Lifetime Value</dt><dd class="font-medium mt-1">${{ '{:,.2f}'.format(item.lifetime_value) if item.lifetime_value else '—' }}</dd></div>
+    </dl>
+  </div>
+
+  <!-- Root cause -->
+  <div class="bg-white rounded-lg border p-6">
+    <h3 class="text-sm font-semibold text-secondary-700 mb-4">Root Cause Analysis</h3>
+    <p class="text-sm text-secondary-700">{{ item.root_cause }}</p>
+  </div>
+
+  <!-- Recommendations -->
+  {% if item.recommendations %}
+  <div class="bg-white rounded-lg border p-6">
+    <h3 class="text-sm font-semibold text-secondary-700 mb-4">Recommendations</h3>
+    <p class="text-sm text-secondary-700">{{ item.recommendations }}</p>
+  </div>
+  {% endif %}
+
+  <a href="/commercial/contracts" class="text-sm text-primary-600 hover:text-primary-800">&larr; Back to Contracts</a>
+</div>
+{% endblock %}

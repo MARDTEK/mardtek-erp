@@ -1,0 +1,52 @@
+{% extends "base.html" %}
+{% from 'macros.html' import status_badge, product_line_badge %}
+{% block title %}Quotes — {{ lead.company }}{% endblock %}
+{% block page_title %}Quotes — {{ lead.company }}{% endblock %}
+
+{% block content %}
+<div class="space-y-4">
+  <div class="flex items-center justify-between">
+    <p class="text-sm text-secondary-500">{{ items | length }} quote{{ 's' if items | length != 1 }} · {{ product_line_badge(lead.product_line) }}</p>
+    <a href="/commercial/leads/{{ lead.id }}/quotes/create"
+       class="px-4 py-2 bg-primary-600 text-white rounded-lg text-sm font-medium hover:bg-primary-700 transition-colors">
+      + New Quote
+    </a>
+  </div>
+
+  {% if items %}
+  <div class="bg-white rounded-lg border overflow-hidden">
+    <table class="w-full text-sm">
+      <thead class="bg-secondary-50 text-secondary-600 text-left text-xs uppercase">
+        <tr>
+          <th class="px-4 py-3">Quote #</th>
+          <th class="px-4 py-3">Version</th>
+          <th class="px-4 py-3 text-right">Total</th>
+          <th class="px-4 py-3">Status</th>
+          <th class="px-4 py-3">Valid Until</th>
+          <th class="px-4 py-3">Created</th>
+        </tr>
+      </thead>
+      <tbody class="divide-y divide-secondary-100">
+        {% for item in items %}
+        <tr class="hover:bg-secondary-50 cursor-pointer"
+            onclick="window.location='/commercial/quotes/{{ item.id }}'">
+          <td class="px-4 py-3 font-medium">{{ item.quote_number }}</td>
+          <td class="px-4 py-3">v{{ item.version }}</td>
+          <td class="px-4 py-3 text-right font-semibold">${{ '{:,.2f}'.format(item.total) }}</td>
+          <td class="px-4 py-3">{{ status_badge(item.status.value if item.status.value is defined else item.status) }}</td>
+          <td class="px-4 py-3">{{ item.valid_until.strftime('%Y-%m-%d') if item.valid_until else '—' }}</td>
+          <td class="px-4 py-3 text-secondary-500">{{ item.created_at.strftime('%Y-%m-%d') }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+  <div class="bg-white rounded-lg border p-12 text-center text-secondary-400">
+    No quotes yet. Create one to start the pricing process.
+  </div>
+  {% endif %}
+
+  <a href="/commercial/leads/{{ lead.id }}" class="text-sm text-primary-600 hover:text-primary-800">&larr; Back to Lead</a>
+</div>
+{% endblock %}

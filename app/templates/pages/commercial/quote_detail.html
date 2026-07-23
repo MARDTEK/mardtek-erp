@@ -1,0 +1,50 @@
+{% extends "base.html" %}
+{% from 'macros.html' import status_badge %}
+{% block title %}{{ item.quote_number }} — Quotes{% endblock %}
+{% block page_title %}Quote — {{ item.quote_number }}{% endblock %}
+
+{% block content %}
+<div class="space-y-6">
+  <!-- Header -->
+  <div class="flex items-start justify-between">
+    <div>
+      <p class="text-secondary-500 text-sm">{{ item.currency }} | v{{ item.version }}</p>
+      <h2 class="text-xl font-bold text-gray-900 mt-1">{{ item.quote_number }}</h2>
+      <p class="text-lg font-semibold text-primary-600 mt-1">${{ '{:,.2f}'.format(item.total) }}</p>
+    </div>
+    <div class="flex items-center gap-2">
+      {{ status_badge(item.status.value if item.status.value is defined else item.status) }}
+    </div>
+  </div>
+
+  <!-- Pricing breakdown -->
+  <div class="bg-white rounded-lg border p-6">
+    <h3 class="text-sm font-semibold text-secondary-700 mb-4">Pricing Breakdown</h3>
+    <dl class="grid grid-cols-2 gap-4 text-sm">
+      <div><dt class="text-secondary-500">Subtotal</dt><dd class="font-medium mt-1">${{ '{:,.2f}'.format(item.subtotal) }}</dd></div>
+      <div><dt class="text-secondary-500">Tax Rate</dt><dd class="font-medium mt-1">{{ item.tax_rate }}%</dd></div>
+      <div><dt class="text-secondary-500">Tax Amount</dt><dd class="font-medium mt-1">${{ '{:,.2f}'.format(item.tax_amount) }}</dd></div>
+      <div><dt class="text-secondary-500">Discount</dt><dd class="font-medium mt-1">{{ item.discount_percent }}% (${{ '{:,.2f}'.format(item.discount_amount) }})</dd></div>
+      <div class="col-span-2 border-t pt-3"><dt class="text-secondary-500 font-semibold">Total</dt><dd class="font-bold text-lg mt-1">${{ '{:,.2f}'.format(item.total) }}</dd></div>
+    </dl>
+  </div>
+
+  <!-- Details -->
+  <div class="bg-white rounded-lg border p-6">
+    <dl class="grid grid-cols-2 gap-4 text-sm">
+      <div><dt class="text-secondary-500">Valid Until</dt><dd class="font-medium mt-1">{{ item.valid_until.strftime('%Y-%m-%d') if item.valid_until else 'Open' }}</dd></div>
+      <div><dt class="text-secondary-500">Created By</dt><dd class="font-medium mt-1">{{ item.created_by }}</dd></div>
+      <div><dt class="text-secondary-500">Sent At</dt><dd class="font-medium mt-1">{{ item.sent_at.strftime('%Y-%m-%d %H:%M') if item.sent_at else '—' }}</dd></div>
+      <div><dt class="text-secondary-500">Accepted At</dt><dd class="font-medium mt-1">{{ item.accepted_at.strftime('%Y-%m-%d %H:%M') if item.accepted_at else '—' }}</dd></div>
+      {% if item.notes %}
+      <div class="col-span-2"><dt class="text-secondary-500">Notes</dt><dd class="font-medium mt-1">{{ item.notes }}</dd></div>
+      {% endif %}
+      {% if item.rejection_reason %}
+      <div class="col-span-2"><dt class="text-secondary-500">Rejection Reason</dt><dd class="font-medium mt-1 text-red-600">{{ item.rejection_reason }}</dd></div>
+      {% endif %}
+    </dl>
+  </div>
+
+  <a href="/commercial/leads" class="text-sm text-primary-600 hover:text-primary-800">&larr; Back to Leads</a>
+</div>
+{% endblock %}

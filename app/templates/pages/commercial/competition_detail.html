@@ -1,0 +1,52 @@
+{% extends "base.html" %}
+{% from 'macros.html' import status_badge %}
+{% block title %}{{ item.competitor_name }} — Competition Matrix{% endblock %}
+{% block page_title %}Competitor — {{ item.competitor_name }}{% endblock %}
+
+{% block content %}
+<div class="space-y-6">
+  <!-- Header -->
+  <div class="flex items-start justify-between">
+    <div>
+      <p class="text-secondary-500 text-sm">{{ item.product_category }}</p>
+      <h2 class="text-xl font-bold text-gray-900 mt-1">{{ item.competitor_name }}</h2>
+    </div>
+    <div class="flex items-center gap-2">
+      {% if item.threat_level %}
+      <span class="px-3 py-1 rounded-full text-xs font-medium
+        {% if item.threat_level == 'high' %}bg-red-100 text-red-700
+        {% elif item.threat_level == 'medium' %}bg-amber-100 text-amber-700
+        {% else %}bg-green-100 text-green-700{% endif %}">
+        {{ item.threat_level | upper }} THREAT
+      </span>
+      {% endif %}
+    </div>
+  </div>
+
+  <!-- Strengths & Weaknesses -->
+  <div class="grid grid-cols-2 gap-4">
+    <div class="bg-white rounded-lg border p-6">
+      <h3 class="text-sm font-semibold text-secondary-700 mb-3">Strengths</h3>
+      <p class="text-sm text-secondary-700">{{ item.strengths }}</p>
+    </div>
+    <div class="bg-white rounded-lg border p-6">
+      <h3 class="text-sm font-semibold text-secondary-700 mb-3">Weaknesses</h3>
+      <p class="text-sm text-secondary-700">{{ item.weaknesses }}</p>
+    </div>
+  </div>
+
+  <!-- Details -->
+  <div class="bg-white rounded-lg border p-6">
+    <dl class="grid grid-cols-3 gap-4 text-sm">
+      <div><dt class="text-secondary-500">Pricing Model</dt><dd class="font-medium mt-1">{{ item.pricing_model or '—' }}</dd></div>
+      <div><dt class="text-secondary-500">Market Share</dt><dd class="font-medium mt-1">{{ item.estimated_market_share }}%</dd></div>
+      <div><dt class="text-secondary-500">Active</dt><dd class="font-medium mt-1">{{ 'Yes' if item.is_active else 'No' }}</dd></div>
+      {% if item.notes %}
+      <div class="col-span-3"><dt class="text-secondary-500">Notes</dt><dd class="font-medium mt-1">{{ item.notes }}</dd></div>
+      {% endif %}
+    </dl>
+  </div>
+
+  <a href="/commercial/competition" class="text-sm text-primary-600 hover:text-primary-800">&larr; Back to Competition Matrix</a>
+</div>
+{% endblock %}

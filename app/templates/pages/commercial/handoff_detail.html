@@ -1,0 +1,38 @@
+{% extends "base.html" %}
+{% from 'macros.html' import status_badge, contract_type_badge %}
+{% block title %}Handoff → {{ item.target_module }}{% endblock %}
+{% block page_title %}Project Handoff — {{ item.target_module }}{% endblock %}
+
+{% block content %}
+<div class="space-y-6">
+  <!-- Header -->
+  <div class="flex items-start justify-between">
+    <div>
+      <p class="text-secondary-500 text-sm">Contract #{{ item.contract_id }}</p>
+      <h2 class="text-xl font-bold text-gray-900 mt-1">Handoff → {{ item.target_module }}</h2>
+      <p class="text-sm text-secondary-500 mt-1">PM: {{ item.project_manager }}</p>
+    </div>
+    <div class="flex items-center gap-2">
+      {{ status_badge(item.status.value if item.status.value is defined else item.status) }}
+    </div>
+  </div>
+
+  <!-- Details -->
+  <div class="bg-white rounded-lg border p-6">
+    <dl class="grid grid-cols-2 gap-4 text-sm">
+      <div><dt class="text-secondary-500">Target Module</dt><dd class="font-medium mt-1">{{ item.target_module }}</dd></div>
+      <div><dt class="text-secondary-500">Project Manager</dt><dd class="font-medium mt-1">{{ item.project_manager }}</dd></div>
+      <div><dt class="text-secondary-500">Signed by Sales</dt><dd class="font-medium mt-1">{{ item.signed_by_sales or '—' }}</dd></div>
+      <div><dt class="text-secondary-500">Signed by PM</dt><dd class="font-medium mt-1">{{ item.signed_by_pm or '—' }}</dd></div>
+      <div><dt class="text-secondary-500">Signed At</dt><dd class="font-medium mt-1">{{ item.signed_at.strftime('%Y-%m-%d %H:%M') if item.signed_at else '—' }}</dd></div>
+      <div><dt class="text-secondary-500">Created</dt><dd class="font-medium mt-1">{{ item.created_at.strftime('%Y-%m-%d %H:%M') }}</dd></div>
+      {% if item.handoff_notes %}
+      <div class="col-span-2"><dt class="text-secondary-500">Handoff Notes</dt><dd class="font-medium mt-1">{{ item.handoff_notes }}</dd></div>
+      {% endif %}
+    </dl>
+  </div>
+
+  <!-- Back link -->
+  <a href="/commercial/contracts" class="text-sm text-primary-600 hover:text-primary-800">&larr; Back to Contracts</a>
+</div>
+{% endblock %}

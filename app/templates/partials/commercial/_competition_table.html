@@ -1,0 +1,41 @@
+{% from 'macros.html' import pagination %}
+<div class="bg-white rounded-lg border overflow-hidden">
+  <table class="w-full text-sm">
+    <thead class="bg-secondary-50 text-secondary-600 text-left text-xs uppercase">
+      <tr>
+        <th class="px-4 py-3">Competitor</th>
+        <th class="px-4 py-3">Category</th>
+        <th class="px-4 py-3">Market Share</th>
+        <th class="px-4 py-3">Threat</th>
+        <th class="px-4 py-3">Pricing</th>
+        <th class="px-4 py-3">Active</th>
+      </tr>
+    </thead>
+    <tbody class="divide-y divide-secondary-100">
+      {% for item in items %}
+      <tr class="hover:bg-secondary-50 cursor-pointer"
+          onclick="window.location='/commercial/competition/{{ item.id }}'">
+        <td class="px-4 py-3 font-medium">{{ item.competitor_name }}</td>
+        <td class="px-4 py-3">{{ item.product_category }}</td>
+        <td class="px-4 py-3">{{ item.estimated_market_share if item.estimated_market_share is not none else '—' }}%</td>
+        <td class="px-4 py-3">
+          {% if item.threat_level %}
+          <span class="px-2 py-0.5 rounded-full text-xs font-medium
+            {% if item.threat_level == 'high' %}bg-red-100 text-red-700
+            {% elif item.threat_level == 'medium' %}bg-amber-100 text-amber-700
+            {% else %}bg-green-100 text-green-700{% endif %}">
+            {{ item.threat_level | upper }}
+          </span>
+          {% else %}—{% endif %}
+        </td>
+        <td class="px-4 py-3">{{ item.pricing_model or '—' }}</td>
+        <td class="px-4 py-3">{{ 'Yes' if item.is_active else 'No' }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% if not items %}
+  <div class="p-12 text-center text-secondary-400 text-sm">No competitors found.</div>
+  {% endif %}
+</div>
+{{ pagination(page, total_pages, '/commercial/competition', search) }}

@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+{% from 'macros.html' import status_badge %}
+{% block title %}{{ item.name }} — Marketing Plans{% endblock %}
+{% block page_title %}Marketing Plan — {{ item.name }}{% endblock %}
+
+{% block content %}
+<div class="space-y-6">
+  <!-- Header -->
+  <div class="flex items-start justify-between">
+    <div>
+      <p class="text-secondary-500 text-sm">Created by {{ item.created_by }}</p>
+      <h2 class="text-xl font-bold text-gray-900 mt-1">{{ item.name }}</h2>
+    </div>
+    <div class="flex items-center gap-2">
+      {{ status_badge(item.status.value if item.status.value is defined else item.status) }}
+    </div>
+  </div>
+
+  <!-- Details -->
+  <div class="bg-white rounded-lg border p-6">
+    <dl class="grid grid-cols-2 gap-4 text-sm">
+      <div class="col-span-2"><dt class="text-secondary-500">Objectives</dt><dd class="font-medium mt-1">{{ item.objectives }}</dd></div>
+      <div><dt class="text-secondary-500">Budget</dt><dd class="font-medium mt-1">${{ '{:,.2f}'.format(item.budget) if item.budget else '—' }}</dd></div>
+      <div><dt class="text-secondary-500">Status</dt><dd class="font-medium mt-1">{{ (item.status.value if item.status.value is defined else item.status) | replace('_', ' ') | title }}</dd></div>
+      <div><dt class="text-secondary-500">Start Date</dt><dd class="font-medium mt-1">{{ item.start_date.strftime('%Y-%m-%d') if item.start_date else '—' }}</dd></div>
+      <div><dt class="text-secondary-500">End Date</dt><dd class="font-medium mt-1">{{ item.end_date.strftime('%Y-%m-%d') if item.end_date else '—' }}</dd></div>
+      <div><dt class="text-secondary-500">Created</dt><dd class="font-medium mt-1">{{ item.created_at.strftime('%Y-%m-%d %H:%M') }}</dd></div>
+    </dl>
+  </div>
+
+  <a href="/commercial/marketing-plans" class="text-sm text-primary-600 hover:text-primary-800">&larr; Back to Marketing Plans</a>
+</div>
+{% endblock %}

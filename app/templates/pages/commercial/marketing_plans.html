@@ -1,0 +1,25 @@
+{% extends "base.html" %}
+{% from 'macros.html' import status_badge, pagination, search_form, empty_state %}
+{% block title %}Marketing Plans — Commercial Sales{% endblock %}
+{% block page_title %}Marketing Plans{% endblock %}
+
+{% block content %}
+<div class="space-y-4">
+  <div class="flex items-center justify-between">
+    <p class="text-sm text-secondary-500">{{ total }} plan{{ 's' if total != 1 }}</p>
+    <a href="/commercial/marketing-plans/create"
+       class="px-4 py-2 bg-primary-600 text-white rounded-lg text-sm font-medium hover:bg-primary-700 transition-colors">
+      + New Marketing Plan
+    </a>
+  </div>
+
+  {{ search_form('/commercial/marketing-plans', search) }}
+
+  <div id="table-container"
+       hx-get="/commercial/marketing-plans/table?page={{ page }}{% if search %}&search={{ search }}{% endif %}{% if status %}&status={{ status }}{% endif %}"
+       hx-trigger="load"
+       hx-swap="innerHTML">
+    <div class="animate-pulse text-secondary-400 text-sm py-8 text-center">Loading marketing plans...</div>
+  </div>
+</div>
+{% endblock %}

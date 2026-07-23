@@ -1,0 +1,62 @@
+{% extends "base.html" %}
+{% block title %}New Competitor{% endblock %}
+{% block page_title %}New Competitor{% endblock %}
+
+{% block content %}
+<div class="max-w-xl">
+  <form method="post" action="/commercial/competition" class="bg-white rounded-lg border p-6 space-y-4">
+    <div class="grid grid-cols-2 gap-4">
+      <div>
+        <label class="block text-sm font-medium text-secondary-700 mb-1">Competitor Name</label>
+        <input name="competitor_name" required placeholder="Acme Inc"
+               class="w-full px-3 py-2 border border-secondary-200 rounded-lg text-sm focus:ring-2 focus:ring-primary-500">
+      </div>
+      <div>
+        <label class="block text-sm font-medium text-secondary-700 mb-1">Product Category</label>
+        <input name="product_category" required placeholder="CRM, ERP, SaaS..."
+               class="w-full px-3 py-2 border border-secondary-200 rounded-lg text-sm focus:ring-2 focus:ring-primary-500">
+      </div>
+    </div>
+    <div>
+      <label class="block text-sm font-medium text-secondary-700 mb-1">Strengths</label>
+      <textarea name="strengths" rows="2" required placeholder="What do they do well?"
+                class="w-full px-3 py-2 border border-secondary-200 rounded-lg text-sm focus:ring-2 focus:ring-primary-500"></textarea>
+    </div>
+    <div>
+      <label class="block text-sm font-medium text-secondary-700 mb-1">Weaknesses</label>
+      <textarea name="weaknesses" rows="2" required placeholder="Where do they fall short?"
+                class="w-full px-3 py-2 border border-secondary-200 rounded-lg text-sm focus:ring-2 focus:ring-primary-500"></textarea>
+    </div>
+    <div class="grid grid-cols-3 gap-4">
+      <div>
+        <label class="block text-sm font-medium text-secondary-700 mb-1">Pricing Model</label>
+        <input name="pricing_model" placeholder="Per seat, flat rate..."
+               class="w-full px-3 py-2 border border-secondary-200 rounded-lg text-sm focus:ring-2 focus:ring-primary-500">
+      </div>
+      <div>
+        <label class="block text-sm font-medium text-secondary-700 mb-1">Market Share (%)</label>
+        <input name="estimated_market_share" type="number" min="0" max="100" placeholder="0-100"
+               class="w-full px-3 py-2 border border-secondary-200 rounded-lg text-sm focus:ring-2 focus:ring-primary-500">
+      </div>
+      <div>
+        <label class="block text-sm font-medium text-secondary-700 mb-1">Threat Level</label>
+        <select name="threat_level" class="w-full px-3 py-2 border border-secondary-200 rounded-lg text-sm">
+          <option value="">Select...</option>
+          <option value="low">Low</option>
+          <option value="medium">Medium</option>
+          <option value="high">High</option>
+        </select>
+      </div>
+    </div>
+    <div>
+      <label class="block text-sm font-medium text-secondary-700 mb-1">Notes</label>
+      <textarea name="notes" rows="2" placeholder="Additional observations..."
+                class="w-full px-3 py-2 border border-secondary-200 rounded-lg text-sm focus:ring-2 focus:ring-primary-500"></textarea>
+    </div>
+    <div class="flex justify-end gap-2">
+      <a href="/commercial/competition" class="px-4 py-2 text-secondary-600 text-sm rounded-lg hover:bg-secondary-50">Cancel</a>
+      <button type="submit" class="px-4 py-2 bg-primary-600 text-white text-sm rounded-lg hover:bg-primary-700">Add Competitor</button>
+    </div>
+  </form>
+</div>
+{% endblock %}

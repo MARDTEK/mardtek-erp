@@ -1,0 +1,39 @@
+{% from 'macros.html' import pagination %}
+<div class="bg-white rounded-lg border overflow-hidden">
+  <table class="w-full text-sm">
+    <thead class="bg-secondary-50 text-secondary-600 text-left text-xs uppercase">
+      <tr>
+        <th class="px-4 py-3">Name</th>
+        <th class="px-4 py-3">Status</th>
+        <th class="px-4 py-3">Budget</th>
+        <th class="px-4 py-3">Start Date</th>
+        <th class="px-4 py-3">End Date</th>
+        <th class="px-4 py-3">Created</th>
+      </tr>
+    </thead>
+    <tbody class="divide-y divide-secondary-100">
+      {% for item in items %}
+      <tr class="hover:bg-secondary-50 cursor-pointer"
+          onclick="window.location='/commercial/marketing-plans/{{ item.id }}'">
+        <td class="px-4 py-3 font-medium">{{ item.name }}</td>
+        <td class="px-4 py-3">
+          <span class="px-2 py-0.5 rounded-full text-xs font-medium
+            {% if item.status.value == 'active' %}bg-green-100 text-green-700
+            {% elif item.status.value == 'completed' %}bg-blue-100 text-blue-700
+            {% else %}bg-secondary-100 text-secondary-600{% endif %}">
+            {{ (item.status.value if item.status.value is defined else item.status) | replace('_', ' ') | upper }}
+          </span>
+        </td>
+        <td class="px-4 py-3">${{ '{:,.2f}'.format(item.budget) if item.budget else '—' }}</td>
+        <td class="px-4 py-3">{{ item.start_date.strftime('%Y-%m-%d') if item.start_date else '—' }}</td>
+        <td class="px-4 py-3">{{ item.end_date.strftime('%Y-%m-%d') if item.end_date else '—' }}</td>
+        <td class="px-4 py-3 text-secondary-500">{{ item.created_at.strftime('%Y-%m-%d') }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% if not items %}
+  <div class="p-12 text-center text-secondary-400 text-sm">No marketing plans found.</div>
+  {% endif %}
+</div>
+{{ pagination(page, total_pages, '/commercial/marketing-plans', search) }}
